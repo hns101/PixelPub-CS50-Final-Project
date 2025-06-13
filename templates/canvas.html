@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block title %}Canvas{% endblock %}
+
+{% block main %}
+<div class="row">
+    <!-- Color Palette -->
+    <div class="col-md-2 text-center">
+        <h4>Colors</h4>
+        <div id="color-palette" class="d-flex flex-wrap justify-content-center">
+            <!-- Colors will be added by JS -->
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="col-md-10 d-flex justify-content-center align-items-center">
+        <canvas id="pixel-canvas"></canvas>
+    </div>
+</div>
+
+<!-- Include the drawing script -->
+<script src="/static/js/draw.js"></script>
+{% endblock %}
