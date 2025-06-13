@@ -1,0 +1,12 @@
+#pixel-canvas {
+    background-color: #222;
+    cursor: crosshair;
+}
+
+#color-palette div {
+    transition: transform 0.2s ease;
+}
+
+#color-palette div:hover {
+    transform: scale(1.1);
+}
