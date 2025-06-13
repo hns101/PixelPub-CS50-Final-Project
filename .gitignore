@@ -1,0 +1,3 @@
+project.db
+/.venv
+/flask_session

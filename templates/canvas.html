@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 
-{% block title %}Canvas{% endblock %}
+{% block title %}Canvas - {{ canvas_info.name }}{% endblock %}
 
 {% block main %}
 <div class="row">
@@ -10,13 +10,24 @@
         <div id="color-palette" class="d-flex flex-wrap justify-content-center">
             <!-- Colors will be added by JS -->
         </div>
+        <hr>
+        <h5 class="mt-3">{{ canvas_info.name }}</h5>
+        <p>Welcome, {{ session.username }}!</p>
     </div>
 
     <!-- Canvas -->
     <div class="col-md-10 d-flex justify-content-center align-items-center">
-        <canvas id="pixel-canvas"></canvas>
+        <canvas id="pixel-canvas"
+                data-canvas-id="{{ canvas_info.id }}"
+                data-canvas-width="{{ canvas_info.width }}"
+                data-canvas-height="{{ canvas_info.height }}"
+                data-canvas-data='{{ canvas_info.canvas_data }}'
+        ></canvas>
     </div>
 </div>
+
+<!-- Add Socket.IO client library -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <!-- Include the drawing script -->
 <script src="/static/js/draw.js"></script>
