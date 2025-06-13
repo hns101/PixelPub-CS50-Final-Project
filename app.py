@@ -1,9 +1,42 @@
 import os
+import sqlite3
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from cs50 import SQL
 from functools import wraps
+
+# --- Database Initialization ---
+DB_FILE = "project.db"
+
+def initialize_database():
+    """Creates and initializes the database and tables if they don't exist."""
+    # The connect() function will create the file if it's not there
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    print("Database file created. Creating tables...")
+    
+    # Create the 'users' table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user'
+        );
+    """)
+    
+    con.commit()
+    con.close()
+    print("Database setup complete.")
+
+# Run initialization check BEFORE setting up the cs50.SQL object
+if not os.path.exists(DB_FILE):
+    initialize_database()
+
+# Now that we're sure project.db exists, we can connect with the CS50 library
+db = SQL(f"sqlite:///{DB_FILE}")
+
 
 # --- App Configuration ---
 app = Flask(__name__)
@@ -13,14 +46,11 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///project.db")
 
 # --- Helper Functions ---
 def login_required(f):
     """
     Decorate routes to require login.
-    http://flask.pocoo.org/docs/1.0/patterns/viewdecorators/
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -121,22 +151,6 @@ def register():
     else:
         return render_template("register.html")
 
-# --- Database Initialization ---
-def setup_database():
-    """Create database tables if they don't exist"""
-    print("Setting up database...")
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            hash TEXT NOT NULL,
-            role TEXT NOT NULL DEFAULT 'user'
-        );
-    """)
-    print("Database setup complete.")
 
 if __name__ == '__main__':
-    # Check if database exists, if not, create it
-    if not os.path.exists("project.db"):
-        setup_database()
     app.run(debug=True)
