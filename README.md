@@ -1,20 +1,20 @@
-# Pixelverse: A Real-Time Collaborative Pixel Art Canvas
+# PixelPub: A Real-Time Collaborative Pixel Art Canvas
 
 #### Video Demo: 
 > **Author**: Hans Bregman  
 > **GitHub**: hns101 | **edX**: ------  
 > **Location**: Lutjewinkel, North Holland, Netherlands  
-> 
+> **Date**: June 14, 2025
 
 ---
 
 ## About The Project
 
-**Pixelverse** is a dynamic, multi-user web application that provides a digital space for creating and sharing pixel art. Inspired by collaborative projects like Reddit's `r/place`, Pixelverse allows users to draw on their own private canvases, share them in a public gallery, and contribute to large-scale community masterpieces in real-time.
+**PixelPub** is a dynamic, multi-user web application that provides a digital space for creating and sharing pixel art. Inspired by collaborative projects like Reddit's `r/place`, PixelPub allows users to draw on their own private canvases, share them in a public gallery, and contribute to large-scale community masterpieces in real-time.
 
 The project was developed as a final project for Harvard's CS50x, combining a Python Flask backend with a highly interactive JavaScript frontend. The core of the application is its real-time engine, built using WebSockets, which ensures that when one user places a pixel, it appears instantly on the screens of all other connected users. This creates a lively and engaging collaborative environment.
 
-Beyond simple drawing, Pixelverse features a unique **pixel history** system on community canvases. By hovering over any pixel, users can see which user last modified it and when, adding a layer of social accountability and history to the shared creations.
+Beyond simple drawing, PixelPub features a unique **pixel history** system on community canvases. By hovering over any pixel, users can see which user last modified it and when, adding a layer of social accountability and history to the shared creations.
 
 ---
 
@@ -58,12 +58,12 @@ The application's data is organized across three main tables:
 
 ## Setup and Installation
 
-To run Pixelverse on a local machine, please follow these steps:
+To run PixelPub on a local machine, please follow these steps:
 
 1.  **Clone the Repository**
     ```bash
     git clone --------
-    cd pixelverse
+    cd pixelpub
     ```
 
 2.  **Set Up a Virtual Environment** (Recommended)
