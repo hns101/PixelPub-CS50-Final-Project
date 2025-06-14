@@ -3,16 +3,26 @@
 {% block title %}Canvas - {{ canvas_info.name }}{% endblock %}
 
 {% block main %}
+<!-- Tooltip for pixel history -->
+<div id="tooltip"></div>
+
 <div class="row">
-    <!-- Color Palette -->
+    <!-- UI Column -->
     <div class="col-md-2 text-center">
         <h4>Colors</h4>
-        <div id="color-palette" class="d-flex flex-wrap justify-content-center">
-            <!-- Colors will be added by JS -->
-        </div>
+        <div id="color-palette" class="d-flex flex-wrap justify-content-center mb-3"></div>
         <hr>
         <h5 class="mt-3">{{ canvas_info.name }}</h5>
-        <p>Welcome, {{ session.username }}!</p>
+        {% if is_owner %}
+            <div class="mt-3">
+                <h6>Owner Controls</h6>
+                <form action="/toggle_public/{{ canvas_info.id }}" method="post">
+                    <button type="submit" class="btn btn-sm {{ 'btn-warning' if canvas_info.is_public else 'btn-success' }}">
+                        Make {{ 'Private' if canvas_info.is_public else 'Public' }}
+                    </button>
+                </form>
+            </div>
+        {% endif %}
     </div>
 
     <!-- Canvas -->
@@ -22,13 +32,11 @@
                 data-canvas-width="{{ canvas_info.width }}"
                 data-canvas-height="{{ canvas_info.height }}"
                 data-canvas-data='{{ canvas_info.canvas_data }}'
+                data-is-community="{{ 'true' if canvas_info.is_community else 'false' }}"
         ></canvas>
     </div>
 </div>
 
-<!-- Add Socket.IO client library -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-
-<!-- Include the drawing script -->
 <script src="/static/js/draw.js"></script>
 {% endblock %}

@@ -10,3 +10,16 @@
 #color-palette div:hover {
     transform: scale(1.1);
 }
+
+/* NEW: Tooltip styles */
+#tooltip {
+    position: absolute;
+    display: none;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    pointer-events: none; /* So it doesn't interfere with mouse events on the canvas */
+    white-space: nowrap;
+    font-size: 0.9em;
+}
