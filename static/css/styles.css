@@ -1,17 +1,10 @@
-#pixel-canvas {
-    background-color: #222;
+/* Existing styles */
+#pixel-canvas, #avatar-canvas {
+    background-color: #f0f0f0;
     cursor: crosshair;
+    image-rendering: pixelated; /* Makes pixels crisp */
 }
 
-#color-palette div {
-    transition: transform 0.2s ease;
-}
-
-#color-palette div:hover {
-    transform: scale(1.1);
-}
-
-/* NEW: Tooltip styles */
 #tooltip {
     position: absolute;
     display: none;
@@ -19,7 +12,25 @@
     color: white;
     padding: 8px 12px;
     border-radius: 5px;
-    pointer-events: none; /* So it doesn't interfere with mouse events on the canvas */
+    pointer-events: none;
     white-space: nowrap;
     font-size: 0.9em;
+    z-index: 1000;
+}
+
+/* NEW: Avatar styles */
+.avatar-nav {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    object-fit: cover;
+}
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #333;
 }

@@ -3,3 +3,4 @@ Flask-Session
 cs50
 werkzeug
 Flask-SocketIO
+Pillow

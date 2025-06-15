@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block title %}Find Users{% endblock %}
+
+{% block main %}
+<div class="container">
+    <h2 class="text-center mb-4">Find Users</h2>
+    <div class="list-group col-md-8 mx-auto">
+        {% for user in users %}
+        <div class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+             <div>
+                <img src="/avatar/{{ user.id }}.png" alt="Avatar" class="avatar-sm me-2">
+                {{ user.username }}
+            </div>
+            <form action="/send_request/{{ user.id }}" method="post">
+                <button type="submit" class="btn btn-primary btn-sm">Send Friend Request</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %}Friends{% endblock %}
+
+{% block main %}
+<div class="container">
+    <h2 class="text-center mb-4">Friends</h2>
+    <div class="row">
+        <!-- Current Friends -->
+        <div class="col-md-6">
+            <h4>My Friends</h4>
+            <ul class="list-group">
+                {% for friend in friends %}
+                <li class="list-group-item bg-dark text-light d-flex align-items-center justify-content-between">
+                    <div>
+                        <img src="/avatar/{{ friend.id }}.png" alt="Avatar" class="avatar-sm me-2">
+                        {{ friend.username }}
+                    </div>
+                    <!-- Future: Add remove friend button -->
+                </li>
+                {% else %}
+                <li class="list-group-item bg-dark text-light">You have no friends yet. Find some!</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <!-- Pending Requests -->
+        <div class="col-md-6">
+            <h4>Pending Requests</h4>
+            {% if pending_received %}
+                <ul class="list-group">
+                    {% for request in pending_received %}
+                    <li class="list-group-item bg-dark text-light d-flex align-items-center justify-content-between">
+                        <div>
+                            <img src="/avatar/{{ request.user_id }}.png" alt="Avatar" class="avatar-sm me-2">
+                            {{ request.username }}
+                        </div>
+                        <div>
+                            <form action="/accept_request/{{ request.id }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                            </form>
+                            <form action="/decline_request/{{ request.id }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm">Decline</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No new friend requests.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

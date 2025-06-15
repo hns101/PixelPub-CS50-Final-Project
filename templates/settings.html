@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block main %}
+<div class="container text-center">
+    <h2>Settings</h2>
+    <p class="text-muted">Design your 32x32 pixel avatar here.</p>
+    
+    <div class="row mt-4">
+        <!-- Avatar Editor Column -->
+        <div class="col-md-8 d-flex justify-content-center align-items-center">
+            <canvas id="avatar-canvas" style="background-color: #eee; cursor: crosshair;"></canvas>
+        </div>
+        
+        <!-- Controls Column -->
+        <div class="col-md-4">
+            <h4>Controls</h4>
+            <label for="color-picker" class="form-label">Color</label>
+            <input type="color" class="form-control form-control-color w-100 mb-3" id="color-picker" value="#000000" title="Choose your color">
+            
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="grid-toggle" checked>
+                <label class="form-check-label" for="grid-toggle">Show Grid</label>
+            </div>
+            
+            <button id="clear-button" class="btn btn-secondary w-100 mb-3">Clear Canvas</button>
+
+            <form action="/settings" method="post" id="avatar-form">
+                <input type="hidden" name="avatar_data" id="avatar-data-input">
+                <button type="submit" class="btn btn-primary w-100">Save Avatar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Special JS for this page -->
+<script>
+    // Pass initial data from Flask to JS
+    const currentAvatarData = JSON.parse('{{ current_avatar_data | safe }}');
+</script>
+<script src="/static/js/avatar_editor.js"></script>
+{% endblock %}
