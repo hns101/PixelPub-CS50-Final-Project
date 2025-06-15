@@ -1,10 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Setup & Config ---
     const socket = io();
     const canvas = document.getElementById('pixel-canvas');
     const tooltip = document.getElementById('tooltip');
+    const colorPicker = document.getElementById('color-picker');
+    const gridToggle = document.getElementById('grid-toggle');
     const ctx = canvas.getContext('2d');
 
-    // --- Config from HTML ---
     const PIXEL_SIZE = 20;
     const CANVAS_ID = canvas.dataset.canvasId;
     const GRID_WIDTH = parseInt(canvas.dataset.canvasWidth, 10);
@@ -12,28 +14,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const IS_COMMUNITY = canvas.dataset.isCommunity === 'true';
     const canvasWidth = PIXEL_SIZE * GRID_WIDTH;
     const canvasHeight = PIXEL_SIZE * GRID_HEIGHT;
-    const GRID_COLOR = "#333";
+    const GRID_COLOR = "#EEEEEE";
     let canvasData = JSON.parse(canvas.dataset.canvasData);
 
-    // --- State ---
-    let selectedColor = '#FFFFFF';
+    // --- State Management ---
+    let selectedColor = colorPicker.value;
+    let isDrawing = false;
+    let lastDrawnPixel = { x: null, y: null };
     let lastHoveredPixel = { x: -1, y: -1 };
-    const colors = [
-        '#FFFFFF', '#C1C1C1', '#EF130B', '#FF7100', '#FFE400', '#00CC00',
-        '#00B2FF', '#231FD3', '#A300BA', '#634b35', '#000000', '#ff99aa'
-    ];
 
-    // --- WebSocket Event Handlers ---
-    socket.on('connect', () => {
-        socket.emit('join_canvas', { canvas_id: CANVAS_ID });
-    });
-
+    // --- WebSocket Handlers ---
+    socket.on('connect', () => socket.emit('join_canvas', { canvas_id: CANVAS_ID }));
     socket.on('pixel_placed', (data) => {
         canvasData[data.y][data.x] = data.color;
-        fillPixel(data.x, data.y, data.color);
+        redrawCanvas();
     });
-    
-    // NEW: Listen for history response
     socket.on('history_response', (data) => {
         if (data.username) {
             tooltip.innerHTML = `Last modified by: <strong>${data.username}</strong><br><small>${new Date(data.timestamp).toLocaleString()}</small>`;
@@ -41,92 +36,125 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Initialization ---
+    // --- Main Drawing & Redrawing Functions ---
+    function drawGrid() {
+        ctx.strokeStyle = GRID_COLOR;
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x <= canvasWidth; x += PIXEL_SIZE) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvasHeight); ctx.stroke();
+        }
+        for (let y = 0; y <= canvasHeight; y += PIXEL_SIZE) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvasWidth, y); ctx.stroke();
+        }
+    }
+
+    function redrawCanvas() {
+        // Clear the entire canvas
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        
+        // Draw all the pixels from our data model
+        for (let y = 0; y < GRID_HEIGHT; y++) {
+            for (let x = 0; x < GRID_WIDTH; x++) {
+                ctx.fillStyle = canvasData[y][x];
+                ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+            }
+        }
+        // If the toggle is checked, draw the grid on top
+        if (gridToggle.checked) {
+            drawGrid();
+        }
+    }
+
+    // --- Event Logic ---
+    function placePixel(gridX, gridY) {
+        // Prevent drawing the same pixel repeatedly while dragging
+        if (lastDrawnPixel.x === gridX && lastDrawnPixel.y === gridY) {
+            return;
+        }
+        
+        // Update local data model and redraw immediately for responsiveness
+        canvasData[gridY][gridX] = selectedColor;
+        redrawCanvas();
+        
+        // Send the pixel to the server
+        socket.emit('place_pixel', {
+            canvas_id: CANVAS_ID,
+            x: gridX,
+            y: gridY,
+            color: selectedColor
+        });
+
+        lastDrawnPixel = { x: gridX, y: gridY };
+    }
+
+    // --- Event Listeners Setup ---
     function initialize() {
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
-        setupPalette();
-        drawFullCanvas();
-        canvas.addEventListener('click', handleCanvasClick);
-        // NEW: Add hover and leave listeners
-        if (IS_COMMUNITY) {
-            canvas.addEventListener('mousemove', handleCanvasHover);
-            canvas.addEventListener('mouseleave', () => {
-                tooltip.style.display = 'none';
-                lastHoveredPixel = { x: -1, y: -1 };
-            });
-        }
-    }
+        redrawCanvas(); // Initial draw (will be solid white, no grid)
 
-    // --- UI Setup & Drawing (No changes needed here) ---
-    function setupPalette() {
-        const paletteContainer = document.getElementById('color-palette');
-        paletteContainer.innerHTML = '';
-        colors.forEach(color => {
-            const colorDiv = document.createElement('div');
-            colorDiv.style.backgroundColor = color;
-            colorDiv.style.width = '40px';
-            colorDiv.style.height = '40px';
-            colorDiv.style.margin = '5px';
-            colorDiv.style.cursor = 'pointer';
-            colorDiv.style.border = '2px solid transparent';
-            colorDiv.addEventListener('click', () => {
-                selectedColor = color;
-                document.querySelectorAll('#color-palette div').forEach(div => {
-                    div.style.border = '2px solid transparent';
-                });
-                colorDiv.style.border = '2px solid #00B2FF';
-            });
-            paletteContainer.appendChild(colorDiv);
+        // Color Picker
+        colorPicker.addEventListener('input', (e) => {
+            selectedColor = e.target.value;
         });
-        paletteContainer.firstChild.style.border = '2px solid #00B2FF';
-    }
-    function drawGrid() {
-        ctx.strokeStyle = GRID_COLOR; ctx.lineWidth = 1;
-        for (let x = 0; x <= canvasWidth; x += PIXEL_SIZE) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvasHeight); ctx.stroke(); }
-        for (let y = 0; y <= canvasHeight; y += PIXEL_SIZE) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvasWidth, y); ctx.stroke(); }
-    }
-    function fillPixel(x, y, color) { ctx.fillStyle = color; ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE); }
-    function drawFullCanvas() {
-        for (let y = 0; y < GRID_HEIGHT; y++) {
-            for (let x = 0; x < GRID_WIDTH; x++) { fillPixel(x, y, canvasData[y][x]); }
-        }
-        drawGrid();
-    }
 
-    // --- Event Handlers ---
-    function handleCanvasClick(event) {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
-        const gridX = Math.floor(mouseX / PIXEL_SIZE);
-        const gridY = Math.floor(mouseY / PIXEL_SIZE);
+        // Grid Toggle
+        gridToggle.addEventListener('change', redrawCanvas);
 
-        fillPixel(gridX, gridY, selectedColor);
-        canvasData[gridY][gridX] = selectedColor;
+        // Drawing Listeners
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const coords = getCoords(e);
+            placePixel(coords.x, coords.y);
+        });
 
-        socket.emit('place_pixel', { canvas_id: CANVAS_ID, x: gridX, y: gridY, color: selectedColor });
-    }
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                const coords = getCoords(e);
+                placePixel(coords.x, coords.y);
+            }
+        });
 
-    // NEW: Hover handler
-    function handleCanvasHover(event) {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
-        const gridX = Math.floor(mouseX / PIXEL_SIZE);
-        const gridY = Math.floor(mouseY / PIXEL_SIZE);
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            lastDrawnPixel = { x: null, y: null }; // Reset for next drag
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+            lastDrawnPixel = { x: null, y: null };
+            tooltip.style.display = 'none';
+        });
         
-        // Update tooltip position
+        // History Hover Listener
+        if (IS_COMMUNITY) {
+            canvas.addEventListener('mousemove', handleHistoryHover);
+        }
+    }
+
+    // --- Helper Functions ---
+    function getCoords(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: Math.floor((event.clientX - rect.left) / PIXEL_SIZE),
+            y: Math.floor((event.clientY - rect.top) / PIXEL_SIZE)
+        };
+    }
+    
+    function handleHistoryHover(event) {
+        if (isDrawing) return; // Don't show tooltip while drawing
+        
+        const coords = getCoords(event);
         tooltip.style.left = `${event.pageX + 15}px`;
         tooltip.style.top = `${event.pageY + 15}px`;
 
-        // If hovering over a new pixel, request its history
-        if (gridX !== lastHoveredPixel.x || gridY !== lastHoveredPixel.y) {
-            lastHoveredPixel = { x: gridX, y: gridY };
-            tooltip.style.display = 'none'; // Hide until we get a response
-            socket.emit('request_history', { canvas_id: CANVAS_ID, x: gridX, y: gridY });
+        if (coords.x !== lastHoveredPixel.x || coords.y !== lastHoveredPixel.y) {
+            lastHoveredPixel = coords;
+            tooltip.style.display = 'none';
+            socket.emit('request_history', { canvas_id: CANVAS_ID, x: coords.x, y: coords.y });
         }
     }
-    
+
+    // --- Start the app ---
     initialize();
 });

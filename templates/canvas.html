@@ -9,10 +9,21 @@
 <div class="row">
     <!-- UI Column -->
     <div class="col-md-2 text-center">
-        <h4>Colors</h4>
-        <div id="color-palette" class="d-flex flex-wrap justify-content-center mb-3"></div>
+        <h5 class="mb-3">{{ canvas_info.name }}</h5>
+        
+        <!-- NEW: Color Picker -->
+        <label for="color-picker" class="form-label">Color</label>
+        <input type="color" class="form-control form-control-color w-100 mb-3" id="color-picker" value="#000000" title="Choose your color">
+        
+        <!-- NEW: Grid Toggle -->
+        <div class="form-check form-switch mb-3 d-flex justify-content-center">
+            <input class="form-check-input" type="checkbox" id="grid-toggle">
+            <label class="form-check-label ms-2" for="grid-toggle">Show Grid</label>
+        </div>
+
         <hr>
-        <h5 class="mt-3">{{ canvas_info.name }}</h5>
+        
+        <!-- Ownership Controls -->
         {% if is_owner %}
             <div class="mt-3">
                 <h6>Owner Controls</h6>
