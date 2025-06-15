@@ -4,50 +4,28 @@
 
 {% block main %}
 <div class="container">
-    <div class="row">
-        <!-- My Canvases -->
-        <div class="col-md-7">
-            <h2>My Canvases</h2>
-            <hr>
-            {% if canvases %}
-                <ul class="list-group">
-                    {% for canvas in canvases %}
-                        <a href="/canvas/{{ canvas.id }}" class="list-group-item list-group-item-action bg-dark text-light d-flex justify-content-between align-items-center">
-                            {{ canvas.name }}
-                            <span class="badge bg-secondary">{{ canvas.width }}x{{ canvas.height }}</span>
-                        </a>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>You haven't created any canvases yet. Create one now!</p>
-            {% endif %}
-        </div>
-
-        <!-- Create New Canvas -->
-        <div class="col-md-5">
-            <div class="card bg-secondary text-light">
-                <div class="card-body">
-                    <h4 class="card-title">Create New Canvas</h4>
-                    <form action="/dashboard" method="post">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Canvas Name</label>
-                            <input type="text" class="form-control" name="name" id="name" required>
-                        </div>
-                        <div class="row">
-                            <div class="col">
-                                <label for="width" class="form-label">Width (16-64)</label>
-                                <input type="number" class="form-control" name="width" id="width" value="32" min="16" max="64" required>
-                            </div>
-                            <div class="col">
-                                <label for="height" class="form-label">Height (16-64)</label>
-                                <input type="number" class="form-control" name="height" id="height" value="32" min="16" max="64" required>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-3 w-100">Create</button>
-                    </form>
-                </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Dashboard</h2>
+        <a href="/create_pub" class="btn btn-primary">Create New Pub</a>
+    </div>
+    
+    <h4>My Pubs</h4>
+    <p class="text-muted">A list of all pubs you own or are a member of.</p>
+    <div class="list-group">
+        {% for pub in pubs %}
+            <a href="/pub/{{ pub.id }}" class="list-group-item list-group-item-action bg-dark text-light d-flex justify-content-between align-items-center">
+                {{ pub.name }}
+                {% if pub.is_private %}
+                    <span class="badge bg-danger">Private</span>
+                {% else %}
+                    <span class="badge bg-success">Public</span>
+                {% endif %}
+            </a>
+        {% else %}
+            <div class="list-group-item bg-dark text-light">
+                You haven't joined or created any pubs yet.
             </div>
-        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

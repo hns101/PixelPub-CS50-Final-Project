@@ -2,35 +2,20 @@
 #pixel-canvas, #avatar-canvas {
     background-color: #f0f0f0;
     cursor: crosshair;
-    image-rendering: pixelated; /* Makes pixels crisp */
+    image-rendering: pixelated;
 }
+.avatar-nav { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #fff; object-fit: cover; }
+.avatar-sm { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #333; }
 
-#tooltip {
-    position: absolute;
-    display: none;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 5px;
-    pointer-events: none;
-    white-space: nowrap;
-    font-size: 0.9em;
-    z-index: 1000;
+/* NEW: Chat styles */
+#chat-messages {
+    display: flex;
+    flex-direction: column;
 }
-
-/* NEW: Avatar styles */
-.avatar-nav {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    object-fit: cover;
+.chat-message {
+    display: flex;
+    align-items: flex-start;
 }
-
-.avatar-sm {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: #333;
+.chat-message p {
+    word-break: break-word; /* Prevents long words from overflowing */
 }
