@@ -10,34 +10,25 @@
         <div class="col-lg-8 d-flex flex-column h-100 pub-canvas-col">
             <!-- Top Controls -->
             <div class="d-flex align-items-center justify-content-center flex-wrap mb-2">
-                <!-- Color Picker -->
                 <label for="color-picker" class="form-label me-2 mb-0">Color:</label>
                 <input type="color" class="form-control form-control-color me-3" id="color-picker" value="#000000" title="Choose your color">
-                
-                <!-- Grid Toggle -->
                 <div class="form-check form-switch me-3">
                     <input class="form-check-input" type="checkbox" id="grid-toggle" checked>
                     <label class="form-check-label" for="grid-toggle">Grid</label>
                 </div>
-
-                <!-- Zoom Slider -->
                 <div class="d-flex align-items-center me-3" style="width: 150px;">
                     <span class="me-2">Zoom</span>
                     <input type="range" class="form-range" min="2" max="40" id="zoom-slider">
                 </div>
-                
-                <!-- Brush Size Slider -->
                 <div class="d-flex align-items-center" style="width: 150px;">
                     <span class="me-2">Brush</span>
                     <input type="range" class="form-range" min="1" max="8" value="1" id="brush-slider">
                     <span id="brush-size-display" class="badge bg-dark ms-2">1</span>
                 </div>
-                
-                <!-- NEW: Download Button -->
                 <button type="button" class="btn btn-outline-info btn-sm ms-3" id="download-btn">Download</button>
             </div>
 
-            <!-- The Canvas Container -->
+            <!-- Canvas Container -->
             <div id="canvas-wrapper" class="text-center flex-grow-1 position-relative">
                 <canvas id="pixel-canvas"
                     data-pub-id="{{ pub.id }}"
@@ -47,7 +38,6 @@
                     data-canvas-data='{{ canvas.canvas_data }}'
                     style="background-color: white; image-rendering: pixelated;"
                 ></canvas>
-                
                 <div id="pixel-info-display"></div>
             </div>
         </div>
@@ -72,12 +62,16 @@
             </form>
             
             {% if pub.owner_id == session.user_id %}
-            <hr><h6 class="text-light">Invite Friends</h6>
-            <form action="/invite_to_pub/{{ pub.id }}" method="post">
-                <div class="input-group">
-                    <select class="form-select" name="friend_id"><option selected disabled>Choose a friend...</option>{% for friend in friends %}<option value="{{ friend.id }}">{{ friend.username }}</option>{% endfor %}</select>
-                    <button class="btn btn-info" type="submit">Invite</button>
-                </div>
+            <hr><h6 class="text-light">Owner Controls</h6>
+            <form action="/invite_to_pub/{{ pub.id }}" method="post" class="input-group mb-2">
+                <select class="form-select" name="friend_id"><option selected disabled>Invite a friend...</option>{% for friend in friends %}<option value="{{ friend.id }}">{{ friend.username }}</option>{% endfor %}</select>
+                <button class="btn btn-info" type="submit">Invite</button>
+            </form>
+            <!-- NEW: Toggle Privacy Button -->
+            <form action="/toggle_pub_privacy/{{ pub.id }}" method="post">
+                <button type="submit" class="btn btn-warning w-100">
+                    Make {{ 'Public' if pub.is_private else 'Private' }}
+                </button>
             </form>
             {% endif %}
         </div>

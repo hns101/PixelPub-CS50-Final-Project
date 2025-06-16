@@ -50,7 +50,7 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
 }
 .avatar-nav { width: 40px; height: 40px; border-radius: 10%; border: 2px solid var(--primary-color); object-fit: cover; }
 .avatar-sm { width: 32px; height: 32px; border-radius: 10%; object-fit: cover; background-color: #333; }
-.canvas-preview-card img { width: 100%; height: 180px; object-fit: contain; background-color: #fff; border-bottom: 1px solid var(--border-color); image-rendering: pixelated; }
+.canvas-preview-card img { width: 100%; height: 320px; object-fit: contain; border-bottom: 8px solid var(--border-color); image-rendering: pixelated; }
 .chat-message { display: flex; align-items: flex-start; }
 .chat-message p { word-break: break-word; }
 .pub-container { height: 85vh; }
@@ -60,4 +60,8 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
     .pub-container { height: auto; flex-direction: column; }
     .pub-canvas-col, .pub-chat-col { height: auto !important; flex-basis: auto !important; }
     .pub-chat-col { max-height: 40vh; margin-top: 2rem; }
+}
+
+.card {
+    border: 8px solid ;
 }

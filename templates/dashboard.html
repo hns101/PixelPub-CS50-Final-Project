@@ -20,8 +20,14 @@
                         <h5 class="card-title">{{ pub.name }}</h5>
                         {% if pub.is_private %}<span class="badge bg-danger">Private</span>{% else %}<span class="badge bg-success">Public</span>{% endif %}
                     </div>
-                    <div class="card-footer">
-                        <a href="/pub/{{ pub.id }}" class="btn btn-primary w-100">Enter Pub</a>
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="/pub/{{ pub.id }}" class="btn btn-primary">Enter Pub</a>
+                        <!-- NEW: Delete Button for Owner -->
+                        {% if pub.owner_id == session.user_id %}
+                        <form action="/delete_pub/{{ pub.id }}" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this pub and its canvas? This cannot be undone.');">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -135,6 +135,32 @@ def invite_to_pub(pub_id):
         flash("This user is already a member.")
     return redirect(f"/pub/{pub_id}")
 
+@app.route("/toggle_pub_privacy/<int:pub_id>", methods=["POST"])
+@login_required
+def toggle_pub_privacy(pub_id):
+    pub_info = db.execute("SELECT owner_id, is_private FROM pubs WHERE id = ?", pub_id)
+    if not pub_info or pub_info[0]["owner_id"] != session["user_id"]:
+        return apology("You do not have permission to modify this pub.", 403)
+    new_status = not pub_info[0]["is_private"]
+    db.execute("UPDATE pubs SET is_private = ? WHERE id = ?", new_status, pub_id)
+    flash(f"Pub is now {'Private' if new_status else 'Public'}.")
+    return redirect(f"/pub/{pub_id}")
+
+@app.route("/delete_pub/<int:pub_id>", methods=["POST"])
+@login_required
+def delete_pub(pub_id):
+    pub_info = db.execute("SELECT owner_id, canvas_id FROM pubs WHERE id = ?", pub_id)
+    if not pub_info or pub_info[0]["owner_id"] != session["user_id"]:
+        return apology("You do not have permission to delete this pub.", 403)
+    canvas_id = pub_info[0]["canvas_id"]
+    db.execute("DELETE FROM chat_messages WHERE pub_id = ?", pub_id)
+    db.execute("DELETE FROM pub_members WHERE pub_id = ?", pub_id)
+    db.execute("DELETE FROM pubs WHERE id = ?", pub_id)
+    db.execute("DELETE FROM pixel_history WHERE canvas_id = ?", canvas_id)
+    db.execute("DELETE FROM canvases WHERE id = ?", canvas_id)
+    flash("Pub and all its data have been permanently deleted.")
+    return redirect("/dashboard")
+
 @app.route("/canvas_preview/<int:canvas_id>.png")
 def canvas_preview(canvas_id):
     canvas_data = db.execute("SELECT width, height, canvas_data FROM canvases WHERE id = ?", canvas_id)
