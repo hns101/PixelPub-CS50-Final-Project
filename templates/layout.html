@@ -18,12 +18,9 @@
                 {% if session.user_id %}
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/community">Community</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/gallery">Gallery</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/users">Find Users</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/friends">Friends</a></li>
                     </ul>
                     <ul class="navbar-nav ms-auto d-flex align-items-center">
-                         <li class="nav-item"><a class="nav-link" href="/friends">Friends</a></li>
                          <li class="nav-item"><a class="nav-link" href="/settings">Settings</a></li>
                          {% if session.role == 'admin' %}
                             <li class="nav-item"><a class="nav-link text-danger" href="/admin">Admin</a></li>
@@ -44,23 +41,16 @@
             </div>
         </div>
     </nav>
-    
-    <!-- This main block is essential for content to appear -->
     <main class="container-fluid p-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-info mb-3 text-center" role="alert">
-                        {{ message }}
-                    </div>
+                    <div class="alert alert-info mb-3 text-center" role="alert">{{ message }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
         {% block main %}{% endblock %}
     </main>
-
-    <!-- These scripts are required for Bootstrap components like the navbar toggler -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

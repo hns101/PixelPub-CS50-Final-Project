@@ -4,43 +4,28 @@
 
 {% block main %}
 <div class="container">
-    <h2 class="text-center mb-4">Friends</h2>
-    <div class="row">
-        <!-- Current Friends -->
-        <div class="col-md-6">
+    <h2 class="text-center mb-5">Friends & Connections</h2>
+    <div class="row gy-5">
+        <!-- Current Friends & Pending Requests -->
+        <div class="col-lg-6">
             <h4>My Friends</h4>
-            <ul class="list-group">
+            <ul class="list-group mb-4">
                 {% for friend in friends %}
-                <li class="list-group-item bg-dark text-light d-flex align-items-center justify-content-between">
-                    <div>
-                        <img src="/avatar/{{ friend.id }}.png" alt="Avatar" class="avatar-sm me-2">
-                        {{ friend.username }}
-                    </div>
-                    <!-- Future: Add remove friend button -->
-                </li>
+                <li class="list-group-item bg-dark text-light d-flex align-items-center"><img src="/avatar/{{ friend.id }}.png" alt="Avatar" class="avatar-sm me-2"> {{ friend.username }}</li>
                 {% else %}
-                <li class="list-group-item bg-dark text-light">You have no friends yet. Find some!</li>
+                <li class="list-group-item bg-dark text-light">You have no friends yet.</li>
                 {% endfor %}
             </ul>
-        </div>
-        <!-- Pending Requests -->
-        <div class="col-md-6">
+            
             <h4>Pending Requests</h4>
             {% if pending_received %}
                 <ul class="list-group">
                     {% for request in pending_received %}
                     <li class="list-group-item bg-dark text-light d-flex align-items-center justify-content-between">
+                        <div><img src="/avatar/{{ request.user_id }}.png" alt="Avatar" class="avatar-sm me-2"> {{ request.username }}</div>
                         <div>
-                            <img src="/avatar/{{ request.user_id }}.png" alt="Avatar" class="avatar-sm me-2">
-                            {{ request.username }}
-                        </div>
-                        <div>
-                            <form action="/accept_request/{{ request.id }}" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-success btn-sm">Accept</button>
-                            </form>
-                            <form action="/decline_request/{{ request.id }}" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-danger btn-sm">Decline</button>
-                            </form>
+                            <form action="/accept_request/{{ request.id }}" method="post" class="d-inline"><button type="submit" class="btn btn-success btn-sm">Accept</button></form>
+                            <form action="/decline_request/{{ request.id }}" method="post" class="d-inline"><button type="submit" class="btn btn-danger btn-sm">Decline</button></form>
                         </div>
                     </li>
                     {% endfor %}
@@ -48,6 +33,19 @@
             {% else %}
                 <p>No new friend requests.</p>
             {% endif %}
+        </div>
+        
+        <!-- Find New Friends -->
+        <div class="col-lg-6">
+            <h4>Find New Friends</h4>
+            <div class="list-group" style="max-height: 400px; overflow-y: auto;">
+                {% for user in other_users %}
+                <div class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+                     <div><img src="/avatar/{{ user.id }}.png" alt="Avatar" class="avatar-sm me-2"> {{ user.username }}</div>
+                    <form action="/send_request/{{ user.id }}" method="post"><button type="submit" class="btn btn-primary btn-sm">Add Friend</button></form>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>

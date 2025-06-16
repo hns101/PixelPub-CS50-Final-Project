@@ -7,20 +7,41 @@
     <div class="row" style="height: 85vh;">
         
         <!-- Canvas Column -->
-        <div class="col-md-8 d-flex flex-column align-items-center justify-content-center h-100">
-            <h4 class="mb-3">{{ pub.name }}</h4>
-            <canvas id="pixel-canvas"
-                data-pub-id="{{ pub.id }}"
-                data-canvas-id="{{ canvas.id }}"
-                data-canvas-width="{{ canvas.width }}"
-                data-canvas-height="{{ canvas.height }}"
-                data-canvas-data='{{ canvas.canvas_data }}'
-                style="max-width: 100%; max-height: 90%;"
-            ></canvas>
+        <div class="col-lg-8 d-flex flex-column h-100">
+            <!-- Top Controls -->
+            <div class="d-flex align-items-center justify-content-center mb-2">
+                <!-- Color Picker -->
+                <label for="color-picker" class="form-label me-2 mb-0">Color:</label>
+                <input type="color" class="form-control form-control-color me-3" id="color-picker" value="#000000" title="Choose your color">
+                
+                <!-- Grid Toggle -->
+                <div class="form-check form-switch me-3">
+                    <input class="form-check-input" type="checkbox" id="grid-toggle" checked>
+                    <label class="form-check-label" for="grid-toggle">Grid</label>
+                </div>
+
+                <!-- NEW: Zoom Slider -->
+                <div class="d-flex align-items-center" style="width: 150px;">
+                    <span class="me-2">Zoom</span>
+                    <input type="range" class="form-range" min="2" max="40" id="zoom-slider">
+                </div>
+            </div>
+
+            <!-- The Canvas Container -->
+            <div class="text-center flex-grow-1" style="overflow: auto; background-color: #777;">
+                <canvas id="pixel-canvas"
+                    data-pub-id="{{ pub.id }}"
+                    data-canvas-id="{{ canvas.id }}"
+                    data-canvas-width="{{ canvas.width }}"
+                    data-canvas-height="{{ canvas.height }}"
+                    data-canvas-data='{{ canvas.canvas_data }}'
+                    style="background-color: white; image-rendering: pixelated;"
+                ></canvas>
+            </div>
         </div>
         
         <!-- Chat & Controls Column -->
-        <div class="col-md-4 d-flex flex-column h-100 bg-secondary p-3 rounded">
+        <div class="col-lg-4 d-flex flex-column h-100 bg-secondary p-3 rounded">
             <!-- Chat Messages -->
             <div id="chat-messages" class="flex-grow-1 overflow-auto mb-3">
                 {% for message in chat %}
@@ -37,24 +58,15 @@
             
             <!-- Chat Input -->
             <form id="chat-form">
-                <div class="input-group">
-                    <input type="text" id="chat-input" class="form-control" placeholder="Say something..." maxlength="250" autocomplete="off" required>
-                    <button class="btn btn-primary" type="submit">Send</button>
-                </div>
+                <div class="input-group"><input type="text" id="chat-input" class="form-control" placeholder="Say something..." maxlength="250" autocomplete="off" required><button class="btn btn-primary" type="submit">Send</button></div>
             </form>
             
-            <!-- Invite Friends (Owner only) -->
+            <!-- Invite Friends (Pub Owner only) -->
             {% if pub.owner_id == session.user_id %}
-            <hr>
-            <h6>Invite Friends</h6>
+            <hr><h6>Invite Friends</h6>
             <form action="/invite_to_pub/{{ pub.id }}" method="post">
                 <div class="input-group">
-                    <select class="form-select" name="friend_id">
-                        <option selected disabled>Choose a friend...</option>
-                        {% for friend in friends %}
-                        <option value="{{ friend.id }}">{{ friend.username }}</option>
-                        {% endfor %}
-                    </select>
+                    <select class="form-select" name="friend_id"><option selected disabled>Choose a friend...</option>{% for friend in friends %}<option value="{{ friend.id }}">{{ friend.username }}</option>{% endfor %}</select>
                     <button class="btn btn-info" type="submit">Invite</button>
                 </div>
             </form>
@@ -63,7 +75,5 @@
     </div>
 </div>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<!-- Note: We are now using a dedicated JS file for this page -->
 <script src="/static/js/pub_canvas.js"></script>
 {% endblock %}

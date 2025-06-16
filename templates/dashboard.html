@@ -1,30 +1,34 @@
 {% extends "layout.html" %}
 
-{% block title %}My Dashboard{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block main %}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Dashboard</h2>
+        <h2>Dashboard</h2>
         <a href="/create_pub" class="btn btn-primary">Create New Pub</a>
     </div>
     
     <h4>My Pubs</h4>
-    <p class="text-muted">A list of all pubs you own or are a member of.</p>
-    <div class="list-group">
-        {% for pub in pubs %}
+    <p class="text-muted">Pubs you own or are a member of.</p>
+    <div class="list-group mb-5">
+        {% for pub in my_pubs %}
             <a href="/pub/{{ pub.id }}" class="list-group-item list-group-item-action bg-dark text-light d-flex justify-content-between align-items-center">
                 {{ pub.name }}
-                {% if pub.is_private %}
-                    <span class="badge bg-danger">Private</span>
-                {% else %}
-                    <span class="badge bg-success">Public</span>
-                {% endif %}
+                {% if pub.is_private %}<span class="badge bg-danger">Private</span>{% else %}<span class="badge bg-success">Public</span>{% endif %}
             </a>
         {% else %}
-            <div class="list-group-item bg-dark text-light">
-                You haven't joined or created any pubs yet.
-            </div>
+            <div class="list-group-item bg-dark text-light">You haven't joined or created any pubs yet.</div>
+        {% endfor %}
+    </div>
+
+    <h4>Community Pubs</h4>
+    <p class="text-muted">Shared spaces for everyone to draw and chat together.</p>
+    <div class="list-group">
+        {% for pub in community_pubs %}
+            <a href="/pub/{{ pub.id }}" class="list-group-item list-group-item-action bg-dark text-light">
+                {{ pub.name }}
+            </a>
         {% endfor %}
     </div>
 </div>
