@@ -32,7 +32,7 @@ def initialize_database():
     cur.execute("CREATE TABLE IF NOT EXISTS pub_members (id INTEGER PRIMARY KEY, pub_id INTEGER NOT NULL, user_id INTEGER NOT NULL, FOREIGN KEY(pub_id) REFERENCES pubs(id), FOREIGN KEY(user_id) REFERENCES users(id), UNIQUE(pub_id, user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY, pub_id INTEGER NOT NULL, user_id INTEGER NOT NULL, content TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(pub_id) REFERENCES pubs(id), FOREIGN KEY(user_id) REFERENCES users(id));")
 
-    community_pubs_data = [("8-Bit Bar", 48, 48), ("The Doodle Den", 64, 32), ("The Canvas Corner", 128, 128)]
+    community_pubs_data = [("The Garden", 48, 48), ("The City", 64, 32), ("The Ocean", 32, 64)]
     for name, width, height in community_pubs_data:
         pub_exists = cur.execute("SELECT id FROM pubs WHERE name = ? AND owner_id IS NULL", (name,)).fetchone()
         if pub_exists is None:
@@ -42,7 +42,6 @@ def initialize_database():
             cur.execute("INSERT INTO canvases (name, width, height, is_community, canvas_data) VALUES (?, ?, ?, ?, ?)", (canvas_name, width, height, 1, initial_data))
             canvas_id = cur.lastrowid
             cur.execute("INSERT INTO pubs (name, owner_id, is_private, canvas_id) VALUES (?, NULL, ?, ?)", (name, False, canvas_id))
-
     con.commit()
     con.close()
     print("Database setup complete.")
@@ -50,15 +49,14 @@ def initialize_database():
 initialize_database()
 db = SQL(f"sqlite:///{DB_FILE}")
 
-# --- App & SocketIO Config ---
+# App Config & Helpers
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "a_super_secret_key_for_socketio_phase3"
+app.config["SECRET_KEY"] = "a_super_secret_key_for_socketio_final"
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 socketio = SocketIO(app)
 
-# --- Helper Functions ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -69,7 +67,7 @@ def login_required(f):
 def apology(message, code=400):
     return render_template("apology.html", top=code, bottom=message), code
 
-# --- Main Routes ---
+# --- Routes ---
 @app.route("/")
 def index():
     if session.get("user_id"): return redirect("/dashboard")
@@ -95,21 +93,16 @@ def create_pub():
             height = int(request.form.get("height"))
         except (ValueError, TypeError):
             return apology("Width and height must be valid numbers.", 400)
-
         if not name or len(name) > 50: return apology("Invalid pub name", 400)
-        if not (16 <= width <= 128 and 16 <= height <= 128):
-            return apology("Width and height must be between 16 and 128.", 400)
-
+        if not (16 <= width <= 128 and 16 <= height <= 128): return apology("Width and height must be between 16 and 128.", 400)
         canvas_name = f"{name}'s Canvas"
         initial_data = json.dumps([['#FFFFFF' for _ in range(width)] for _ in range(height)])
         canvas_id = db.execute("INSERT INTO canvases (name, width, height, owner_id, canvas_data) VALUES (?, ?, ?, ?, ?)", canvas_name, width, height, user_id, initial_data)
-        
         pub_id = db.execute("INSERT INTO pubs (name, owner_id, is_private, canvas_id) VALUES (?, ?, ?, ?)", name, user_id, is_private, canvas_id)
         db.execute("INSERT INTO pub_members (pub_id, user_id) VALUES (?, ?)", pub_id, user_id)
-        
         flash("Pub created successfully!")
         return redirect(f"/pub/{pub_id}")
-    else: 
+    else:
         return render_template("create_pub.html")
 
 @app.route("/pub/<int:pub_id>")
@@ -142,7 +135,25 @@ def invite_to_pub(pub_id):
         flash("This user is already a member.")
     return redirect(f"/pub/{pub_id}")
 
-# --- Avatar & Social Routes ---
+@app.route("/canvas_preview/<int:canvas_id>.png")
+def canvas_preview(canvas_id):
+    canvas_data = db.execute("SELECT width, height, canvas_data FROM canvases WHERE id = ?", canvas_id)
+    if not canvas_data: return apology("Canvas not found", 404)
+    c = canvas_data[0]
+    width, height, pixels_json = c["width"], c["height"], c["canvas_data"]
+    img = Image.new('RGB', (width, height), color='white')
+    draw = ImageDraw.Draw(img)
+    try:
+        pixels = json.loads(pixels_json)
+        for y, row in enumerate(pixels):
+            for x, color in enumerate(row):
+                if color and color != '#FFFFFF': draw.point((x, y), fill=color)
+    except (json.JSONDecodeError, TypeError): pass
+    img_io = io.BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+    return Response(img_io.getvalue(), mimetype='image/png')
+
 @app.route("/avatar/<int:user_id>.png")
 def avatar(user_id):
     user = db.execute("SELECT avatar_data FROM users WHERE id = ?", user_id)
@@ -157,8 +168,7 @@ def avatar(user_id):
             for y, row in enumerate(pixel_data):
                 for x, color in enumerate(row):
                     if color: draw.rectangle([x*PIXEL_SIZE, y*PIXEL_SIZE, (x+1)*PIXEL_SIZE-1, (y+1)*PIXEL_SIZE-1], fill=color)
-        except (json.JSONDecodeError, TypeError):
-            pass # Failsafe for corrupted data
+        except (json.JSONDecodeError, TypeError): pass
     img_io = io.BytesIO()
     img.save(img_io, 'PNG')
     img_io.seek(0)
@@ -265,12 +275,40 @@ def handle_join_pub(data):
 def handle_place_pixel(data):
     user_id = session.get('user_id')
     if not user_id: return
-    pub_id, canvas_id, x, y, color = data.get('pub_id'), data.get('canvas_id'), data['x'], data['y'], data['color']
-    canvas_data_str = db.execute("SELECT canvas_data FROM canvases WHERE id = ?", canvas_id)[0]['canvas_data']
-    canvas_data = json.loads(canvas_data_str)
-    canvas_data[y][x] = color
-    db.execute("UPDATE canvases SET canvas_data = ? WHERE id = ?", json.dumps(canvas_data), canvas_id)
+
+    pub_id = data.get('pub_id')
+    canvas_id = data.get('canvas_id')
+    x, y, color = data['x'], data['y'], data['color']
+
+    # LOG HISTORY FOR ALL CANVASES
+    db.execute(
+        "INSERT INTO pixel_history (canvas_id, x, y, modifier_id, color) VALUES (?, ?, ?, ?, ?)",
+        canvas_id, x, y, user_id, color
+    )
+    
     emit('pixel_placed', data, room=f"pub_{pub_id}", include_self=False)
+
+@socketio.on('save_canvas_state')
+def handle_save_canvas_state(data):
+    user_id = session.get('user_id')
+    if not user_id: return
+
+    canvas_id = data.get('canvas_id')
+    canvas_data = data.get('canvas_data')
+
+    if not canvas_id or not canvas_data: return
+
+    db.execute("UPDATE canvases SET canvas_data = ? WHERE id = ?", json.dumps(canvas_data), canvas_id)
+    print(f"Canvas {canvas_id} saved by user {user_id}")
+
+@socketio.on('request_history')
+def handle_request_history(data):
+    canvas_id, x, y = data['canvas_id'], data['x'], data['y']
+    history_data = db.execute("SELECT u.username, p.timestamp FROM pixel_history p JOIN users u ON p.modifier_id = u.id WHERE p.canvas_id = ? AND p.x = ? AND p.y = ? ORDER BY p.timestamp DESC LIMIT 1", canvas_id, x, y)
+    if history_data:
+        emit('history_response', history_data[0])
+    else:
+        emit('history_response', {'username': 'N/A', 'timestamp': 'Never modified'})
 
 @socketio.on('send_message')
 def handle_send_message(data):

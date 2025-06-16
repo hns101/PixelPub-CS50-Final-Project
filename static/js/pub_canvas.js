@@ -4,10 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('pixel-canvas');
     const colorPicker = document.getElementById('color-picker');
     const gridToggle = document.getElementById('grid-toggle');
-    const zoomSlider = document.getElementById('zoom-slider'); // New slider element
+    const zoomSlider = document.getElementById('zoom-slider');
     const chatMessages = document.getElementById('chat-messages');
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
+    const pixelInfoDisplay = document.getElementById('pixel-info-display');
     const ctx = canvas.getContext('2d');
 
     const PUB_ID = canvas.dataset.pubId;
@@ -19,12 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let canvasData = JSON.parse(canvas.dataset.canvasData);
 
     // --- State Management ---
-    let zoomLevel = 15; // Represents the size of each pixel.
+    let zoomLevel = 15;
     const MIN_ZOOM = 2;
     const MAX_ZOOM = 40;
     let selectedColor = colorPicker.value;
     let isDrawing = false;
     let lastDrawnPixel = { x: null, y: null };
+    let lastHoveredPixel = { x: -1, y: -1 };
 
     // --- WebSocket Handlers ---
     socket.on('connect', () => socket.emit('join_pub', { pub_id: PUB_ID }));
@@ -33,6 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
         redrawCanvas();
     });
     socket.on('new_message', (data) => appendMessage(data));
+
+    socket.on('history_response', (data) => {
+        if (data.username) {
+            pixelInfoDisplay.innerHTML = `(${lastHoveredPixel.x}, ${lastHoveredPixel.y}) by <strong>${data.username}</strong>`;
+            pixelInfoDisplay.style.display = 'block';
+        }
+    });
 
     // --- Chat Functions ---
     function appendMessage(data) {
@@ -77,39 +86,55 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('place_pixel', { pub_id: PUB_ID, canvas_id: CANVAS_ID, x: gridX, y: gridY, color: selectedColor });
         lastDrawnPixel = { x: gridX, y: gridY };
     }
+
+    function saveCanvasState() {
+        socket.emit('save_canvas_state', { canvas_id: CANVAS_ID, canvas_data: canvasData });
+    }
     
     // --- Event Listeners ---
     function initialize() {
-        // Set initial slider and canvas size
         zoomSlider.min = MIN_ZOOM;
         zoomSlider.max = MAX_ZOOM;
         zoomSlider.value = zoomLevel;
         updateCanvasSize(); 
-        
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         colorPicker.addEventListener('input', (e) => selectedColor = e.target.value);
         gridToggle.addEventListener('change', redrawCanvas);
-
-        // Zoom slider listener
         zoomSlider.addEventListener('input', (e) => {
             zoomLevel = parseInt(e.target.value, 10);
             updateCanvasSize();
         });
 
-        // Drawing listeners
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
             placePixel(getCoords(e).x, getCoords(e).y);
         });
-        canvas.addEventListener('mousemove', (e) => { if (isDrawing) placePixel(getCoords(e).x, getCoords(e).y); });
-        document.addEventListener('mouseup', () => {
-            isDrawing = false;
-            lastDrawnPixel = { x: null, y: null };
+        
+        // UPDATED: This now applies the hover effect to ALL pubs
+        canvas.addEventListener('mousemove', (e) => { 
+            if (isDrawing) {
+                placePixel(getCoords(e).x, getCoords(e).y)
+            } else {
+                handleHistoryHover(e); // History check now happens for every pub
+            }
         });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDrawing) {
+                isDrawing = false;
+                lastDrawnPixel = { x: null, y: null };
+                saveCanvasState();
+            }
+        });
+        
         canvas.addEventListener('mouseleave', () => {
-            isDrawing = false;
-            lastDrawnPixel = { x: null, y: null };
+             if (isDrawing) {
+                isDrawing = false;
+                lastDrawnPixel = { x: null, y: null };
+                saveCanvasState();
+            }
+            pixelInfoDisplay.style.display = 'none';
         });
 
         chatForm.addEventListener('submit', (e) => {
@@ -122,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Calculates coordinates based on the current zoom level.
     function getCoords(event) {
         const rect = canvas.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
@@ -131,6 +155,16 @@ document.addEventListener('DOMContentLoaded', () => {
             x: Math.floor(mouseX / zoomLevel),
             y: Math.floor(mouseY / zoomLevel)
         };
+    }
+    
+    function handleHistoryHover(event) {
+        if (isDrawing) return;
+        const coords = getCoords(event);
+        if (coords.x !== lastHoveredPixel.x || coords.y !== lastHoveredPixel.y) {
+            lastHoveredPixel = coords;
+            pixelInfoDisplay.style.display = 'none';
+            socket.emit('request_history', { canvas_id: CANVAS_ID, x: coords.x, y: coords.y });
+        }
     }
     
     initialize();
