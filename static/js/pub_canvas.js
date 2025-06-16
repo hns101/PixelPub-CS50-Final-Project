@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const colorPicker = document.getElementById('color-picker');
     const gridToggle = document.getElementById('grid-toggle');
     const zoomSlider = document.getElementById('zoom-slider');
+    const brushSlider = document.getElementById('brush-slider');
+    const brushSizeDisplay = document.getElementById('brush-size-display');
     const chatMessages = document.getElementById('chat-messages');
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
@@ -21,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State Management ---
     let zoomLevel = 15;
+    let brushSize = 1; // NEW
     const MIN_ZOOM = 2;
     const MAX_ZOOM = 40;
     let selectedColor = colorPicker.value;
@@ -35,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
         redrawCanvas();
     });
     socket.on('new_message', (data) => appendMessage(data));
-
     socket.on('history_response', (data) => {
         if (data.username) {
             pixelInfoDisplay.innerHTML = `(${lastHoveredPixel.x}, ${lastHoveredPixel.y}) by <strong>${data.username}</strong>`;
@@ -77,14 +79,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gridToggle.checked) drawGrid();
     }
     
+    // NEW: Function to apply the brush to the canvas
+    function applyBrush(centerX, centerY) {
+        const radius = Math.floor((brushSize - 1) / 2);
+        for (let y = centerY - radius; y <= centerY + radius; y++) {
+            for (let x = centerX - radius; x <= centerX + radius; x++) {
+                placePixel(x, y);
+            }
+        }
+    }
+    
     function placePixel(gridX, gridY) {
         if (gridX < 0 || gridX >= GRID_WIDTH || gridY < 0 || gridY >= GRID_HEIGHT) return;
-        if (lastDrawnPixel.x === gridX && lastDrawnPixel.y === gridY) return;
+        if (canvasData[gridY][gridX] === selectedColor) return;
         
         canvasData[gridY][gridX] = selectedColor;
-        redrawCanvas();
+        // Don't redraw here for performance. Redraw after the whole brush is applied.
         socket.emit('place_pixel', { pub_id: PUB_ID, canvas_id: CANVAS_ID, x: gridX, y: gridY, color: selectedColor });
-        lastDrawnPixel = { x: gridX, y: gridY };
     }
 
     function saveCanvasState() {
@@ -105,25 +116,33 @@ document.addEventListener('DOMContentLoaded', () => {
             zoomLevel = parseInt(e.target.value, 10);
             updateCanvasSize();
         });
+        
+        // NEW: Brush slider listener
+        brushSlider.addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value, 10);
+            brushSizeDisplay.textContent = brushSize;
+        });
 
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
-            placePixel(getCoords(e).x, getCoords(e).y);
+            const coords = getCoords(e);
+            applyBrush(coords.x, coords.y);
+            redrawCanvas(); // Redraw once after the first brush application
         });
         
-        // UPDATED: This now applies the hover effect to ALL pubs
         canvas.addEventListener('mousemove', (e) => { 
             if (isDrawing) {
-                placePixel(getCoords(e).x, getCoords(e).y)
+                const coords = getCoords(e);
+                applyBrush(coords.x, coords.y);
+                redrawCanvas(); // Redraw after each move
             } else {
-                handleHistoryHover(e); // History check now happens for every pub
+                handleHistoryHover(e);
             }
         });
         
         document.addEventListener('mouseup', () => {
             if (isDrawing) {
                 isDrawing = false;
-                lastDrawnPixel = { x: null, y: null };
                 saveCanvasState();
             }
         });
@@ -131,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.addEventListener('mouseleave', () => {
              if (isDrawing) {
                 isDrawing = false;
-                lastDrawnPixel = { x: null, y: null };
                 saveCanvasState();
             }
             pixelInfoDisplay.style.display = 'none';

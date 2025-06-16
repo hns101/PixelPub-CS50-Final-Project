@@ -19,6 +19,13 @@
             <label for="color-picker" class="form-label">Color</label>
             <input type="color" class="form-control form-control-color w-100 mb-3" id="color-picker" value="#000000" title="Choose your color">
             
+            <!-- NEW: Brush Size Slider -->
+            <label for="brush-slider" class="form-label">Brush Size</label>
+            <div class="d-flex align-items-center mb-3">
+                <input type="range" class="form-range" min="1" max="5" value="1" id="brush-slider">
+                <span id="brush-size-display" class="badge bg-dark ms-2">1</span>
+            </div>
+
             <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="grid-toggle" checked>
                 <label class="form-check-label" for="grid-toggle">Show Grid</label>
