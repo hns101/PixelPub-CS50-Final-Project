@@ -17,19 +17,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const CANVAS_ID = canvas.dataset.canvasId;
     const GRID_WIDTH = parseInt(canvas.dataset.canvasWidth, 10);
     const GRID_HEIGHT = parseInt(canvas.dataset.canvasHeight, 10);
+    const IS_COMMUNITY = canvas.dataset.isCommunity === 'true';
     
     const GRID_COLOR = "#DDDDDD";
     let canvasData = JSON.parse(canvas.dataset.canvasData);
 
     // --- State Management ---
     let zoomLevel = 15;
-    let brushSize = 1; // NEW
+    let brushSize = 1; // Re-implemented brush size
     const MIN_ZOOM = 2;
     const MAX_ZOOM = 40;
     let selectedColor = colorPicker.value;
     let isDrawing = false;
-    let lastDrawnPixel = { x: null, y: null };
     let lastHoveredPixel = { x: -1, y: -1 };
+    let pixelsToLog = [];
 
     // --- WebSocket Handlers ---
     socket.on('connect', () => socket.emit('join_pub', { pub_id: PUB_ID }));
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         redrawCanvas();
     });
     socket.on('new_message', (data) => appendMessage(data));
+
     socket.on('history_response', (data) => {
         if (data.username) {
             pixelInfoDisplay.innerHTML = `(${lastHoveredPixel.x}, ${lastHoveredPixel.y}) by <strong>${data.username}</strong>`;
@@ -79,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gridToggle.checked) drawGrid();
     }
     
-    // NEW: Function to apply the brush to the canvas
     function applyBrush(centerX, centerY) {
         const radius = Math.floor((brushSize - 1) / 2);
         for (let y = centerY - radius; y <= centerY + radius; y++) {
@@ -88,25 +89,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-    
+
     function placePixel(gridX, gridY) {
         if (gridX < 0 || gridX >= GRID_WIDTH || gridY < 0 || gridY >= GRID_HEIGHT) return;
         if (canvasData[gridY][gridX] === selectedColor) return;
         
         canvasData[gridY][gridX] = selectedColor;
-        // Don't redraw here for performance. Redraw after the whole brush is applied.
         socket.emit('place_pixel', { pub_id: PUB_ID, canvas_id: CANVAS_ID, x: gridX, y: gridY, color: selectedColor });
+        pixelsToLog.push({ x: gridX, y: gridY, color: selectedColor });
     }
 
-    function saveCanvasState() {
+    function saveAndLog() {
+        if (pixelsToLog.length > 0) {
+            socket.emit('log_pixel_history', { canvas_id: CANVAS_ID, pixels: pixelsToLog });
+            pixelsToLog = [];
+        }
         socket.emit('save_canvas_state', { canvas_id: CANVAS_ID, canvas_data: canvasData });
     }
     
     // --- Event Listeners ---
     function initialize() {
-        zoomSlider.min = MIN_ZOOM;
-        zoomSlider.max = MAX_ZOOM;
         zoomSlider.value = zoomLevel;
+        brushSlider.value = brushSize;
+        brushSizeDisplay.textContent = brushSize;
         updateCanvasSize(); 
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -116,8 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
             zoomLevel = parseInt(e.target.value, 10);
             updateCanvasSize();
         });
-        
-        // NEW: Brush slider listener
         brushSlider.addEventListener('input', (e) => {
             brushSize = parseInt(e.target.value, 10);
             brushSizeDisplay.textContent = brushSize;
@@ -125,16 +128,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
-            const coords = getCoords(e);
-            applyBrush(coords.x, coords.y);
-            redrawCanvas(); // Redraw once after the first brush application
+            applyBrush(getCoords(e).x, getCoords(e).y);
+            redrawCanvas();
         });
         
         canvas.addEventListener('mousemove', (e) => { 
             if (isDrawing) {
-                const coords = getCoords(e);
-                applyBrush(coords.x, coords.y);
-                redrawCanvas(); // Redraw after each move
+                applyBrush(getCoords(e).x, getCoords(e).y);
+                redrawCanvas();
             } else {
                 handleHistoryHover(e);
             }
@@ -143,14 +144,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('mouseup', () => {
             if (isDrawing) {
                 isDrawing = false;
-                saveCanvasState();
+                saveAndLog();
             }
         });
         
         canvas.addEventListener('mouseleave', () => {
              if (isDrawing) {
                 isDrawing = false;
-                saveCanvasState();
+                saveAndLog();
             }
             pixelInfoDisplay.style.display = 'none';
         });

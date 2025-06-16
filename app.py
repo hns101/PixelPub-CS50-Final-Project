@@ -273,33 +273,28 @@ def handle_join_pub(data):
 
 @socketio.on('place_pixel')
 def handle_place_pixel(data):
-    user_id = session.get('user_id')
-    if not user_id: return
-
+    if 'user_id' not in session: return
     pub_id = data.get('pub_id')
-    canvas_id = data.get('canvas_id')
-    x, y, color = data['x'], data['y'], data['color']
-
-    # LOG HISTORY FOR ALL CANVASES
-    db.execute(
-        "INSERT INTO pixel_history (canvas_id, x, y, modifier_id, color) VALUES (?, ?, ?, ?, ?)",
-        canvas_id, x, y, user_id, color
-    )
-    
     emit('pixel_placed', data, room=f"pub_{pub_id}", include_self=False)
 
 @socketio.on('save_canvas_state')
 def handle_save_canvas_state(data):
     user_id = session.get('user_id')
     if not user_id: return
-
-    canvas_id = data.get('canvas_id')
-    canvas_data = data.get('canvas_data')
-
+    canvas_id, canvas_data = data.get('canvas_id'), data.get('canvas_data')
     if not canvas_id or not canvas_data: return
-
     db.execute("UPDATE canvases SET canvas_data = ? WHERE id = ?", json.dumps(canvas_data), canvas_id)
     print(f"Canvas {canvas_id} saved by user {user_id}")
+    
+@socketio.on('log_pixel_history')
+def handle_log_pixel_history(data):
+    user_id = session.get('user_id')
+    if not user_id: return
+    canvas_id, pixels = data.get('canvas_id'), data.get('pixels')
+    if not canvas_id or not pixels: return
+    for pixel in pixels:
+        db.execute("INSERT INTO pixel_history (canvas_id, x, y, modifier_id, color) VALUES (?, ?, ?, ?, ?)", canvas_id, pixel['x'], pixel['y'], user_id, pixel['color'])
+    print(f"Logged {len(pixels)} pixels to history for canvas {canvas_id} by user {user_id}")
 
 @socketio.on('request_history')
 def handle_request_history(data):
