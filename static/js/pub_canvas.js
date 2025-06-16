@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const zoomSlider = document.getElementById('zoom-slider');
     const brushSlider = document.getElementById('brush-slider');
     const brushSizeDisplay = document.getElementById('brush-size-display');
+    const downloadBtn = document.getElementById('download-btn'); // New element
     const chatMessages = document.getElementById('chat-messages');
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
@@ -17,14 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const CANVAS_ID = canvas.dataset.canvasId;
     const GRID_WIDTH = parseInt(canvas.dataset.canvasWidth, 10);
     const GRID_HEIGHT = parseInt(canvas.dataset.canvasHeight, 10);
-    const IS_COMMUNITY = canvas.dataset.isCommunity === 'true';
     
     const GRID_COLOR = "#DDDDDD";
     let canvasData = JSON.parse(canvas.dataset.canvasData);
 
     // --- State Management ---
     let zoomLevel = 15;
-    let brushSize = 1; // Re-implemented brush size
+    let brushSize = 1;
     const MIN_ZOOM = 2;
     const MAX_ZOOM = 40;
     let selectedColor = colorPicker.value;
@@ -124,6 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
         brushSlider.addEventListener('input', (e) => {
             brushSize = parseInt(e.target.value, 10);
             brushSizeDisplay.textContent = brushSize;
+        });
+        
+        // NEW: Download button listener
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'pixelpub-art.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         });
 
         canvas.addEventListener('mousedown', (e) => {

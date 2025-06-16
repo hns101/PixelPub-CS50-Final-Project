@@ -6,18 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const brushSlider = document.getElementById('brush-slider');
     const brushSizeDisplay = document.getElementById('brush-size-display');
     const clearButton = document.getElementById('clear-button');
+    const downloadBtn = document.getElementById('download-btn'); // New element
     const avatarForm = document.getElementById('avatar-form');
     const avatarDataInput = document.getElementById('avatar-data-input');
     const ctx = canvas.getContext('2d');
 
-    const GRID_DIM = 32; // 32x32 grid
+    const GRID_DIM = 32;
     const GRID_COLOR = "#CCCCCC";
-
-    // Set internal canvas resolution. CSS will handle scaling the display.
     canvas.width = GRID_DIM;
     canvas.height = GRID_DIM;
-    
-    // NEW: Set the visual size of the canvas to be larger
     canvas.style.width = '480px';
     canvas.style.height = '480px';
     canvas.style.imageRendering = 'pixelated';
@@ -32,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Drawing & Canvas Functions ---
     function drawGrid() {
         ctx.strokeStyle = GRID_COLOR;
-        // Use a small line width relative to the 1x1 pixel grid
         ctx.lineWidth = 0.05;
         for (let i = 0; i <= GRID_DIM; i++) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, GRID_DIM); ctx.stroke();
@@ -42,12 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function redrawCanvas() {
         ctx.clearRect(0, 0, GRID_DIM, GRID_DIM);
-        
         for (let y = 0; y < GRID_DIM; y++) {
             for (let x = 0; x < GRID_DIM; x++) {
-                // Default to white if a pixel has no data (e.g. from older erased data)
                 ctx.fillStyle = avatarData[y][x] || '#FFFFFF';
-                // Draw each "pixel" as a 1x1 square on the internal canvas
                 ctx.fillRect(x, y, 1, 1);
             }
         }
@@ -56,7 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Brush functionality
     function applyBrush(centerX, centerY) {
         const radius = Math.floor((brushSize - 1) / 2);
         for (let y = centerY - radius; y <= centerY + radius; y++) {
@@ -68,14 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function placePixel(gridX, gridY) {
         if (gridX < 0 || gridX >= GRID_DIM || gridY < 0 || gridY >= GRID_DIM) return;
-        
         if (avatarData[gridY][gridX] === selectedColor) return;
         avatarData[gridY][gridX] = selectedColor;
     }
     
     // --- Event Listeners Setup ---
     function initialize() {
-        // Fix initial data if it contains nulls
         for(let r=0; r < GRID_DIM; r++) {
             for (let c=0; c < GRID_DIM; c++) {
                 if(avatarData[r][c] === null) {
@@ -95,6 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
         brushSlider.addEventListener('input', (e) => {
             brushSize = parseInt(e.target.value, 10);
             brushSizeDisplay.textContent = brushSize;
+        });
+        
+        // NEW: Download button listener
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'avatar.png';
+            // This captures the internal 32x32 canvas, not the scaled display version
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         });
 
         canvas.addEventListener('mousedown', (e) => {
@@ -116,20 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Correctly calculates grid coordinates regardless of CSS scaling
     function getCoords(event) {
         const rect = canvas.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
-
-        // Calculate mouse position as a ratio of the displayed canvas's dimensions
         const xRatio = mouseX / rect.width;
         const yRatio = mouseY / rect.height;
-
-        // Apply that ratio to the actual internal grid dimensions
         const gridX = Math.floor(xRatio * GRID_DIM);
         const gridY = Math.floor(yRatio * GRID_DIM);
-        
         return { x: gridX, y: gridY };
     }
     
