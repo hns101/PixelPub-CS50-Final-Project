@@ -23,9 +23,9 @@
                 <div class="d-flex align-items-center" style="width: 150px;">
                     <span class="me-2">Brush</span>
                     <input type="range" class="form-range" min="1" max="8" value="1" id="brush-slider">
-                    <span id="brush-size-display" class="badge bg-dark ms-2">1</span>
+                    <span id="brush-size-display" class="badge ms-2">1</span>
                 </div>
-                <button type="button" class="btn btn-outline-info btn-sm ms-3" id="download-btn">Download</button>
+                <button type="button" class="btn btn-outline-info btn-sm ms-3" id="download-btn">📥</button>
             </div>
 
             <!-- Canvas Container -->
@@ -43,7 +43,7 @@
         </div>
         
         <!-- Chat & Controls Column -->
-        <div class="col-lg-4 d-flex flex-column h-100 p-3 rounded pub-chat-col" style="background-color: var(--bg-secondary);">
+        <div class="col-lg-4 d-flex flex-column h-100 p-3 rounded pub-chat-col" style="background-color: rgb(228, 216, 177);">
             <div id="chat-messages" class="flex-grow-1 overflow-auto mb-3">
                 {% for message in chat %}
                 <div class="chat-message mb-2">

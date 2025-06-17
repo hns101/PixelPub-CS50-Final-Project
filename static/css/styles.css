@@ -3,13 +3,13 @@
     --bg-dark: #d6886c;
     --bg-secondary: #b8623a;
     --border-color: #f0a83b;
-    --text-light: #F0F8FF;
+    --text-light: #ffffff;
     --text-muted: #8F9BB3;
     --primary-color: #c25e24;
     --primary-hover: #b36c2a;
     --success-color: #00B383;
-    --danger-color: #FF3D71;
-    --info-color: #fbff00;
+    --danger-color: #8f2a2ade;
+    --info-color: #e2b741;
 }
 
 /* --- Base Styles --- */
@@ -23,8 +23,8 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
 .btn-success { background-color: var(--success-color); border-color: var(--success-color); }
 .btn-danger { background-color: var(--danger-color); border-color: var(--danger-color); }
 .btn-info { background-color: var(--info-color); border-color: var(--info-color); }
-.form-control, .form-select { background-color: var(--bg-dark); border-color: var(--border-color); color: var(--text-light); }
-.form-control:focus, .form-select:focus { background-color: var(--bg-dark); border-color: var(--primary-color); color: var(--text-light); box-shadow: 0 0 0 0.25rem rgba(93, 95, 239, 0.25); }
+.form-control, .form-select { background-color: white;  color: #161616; }
+.form-control:focus, .form-select:focus { background-color: white; border-color: var(--primary-color); color: #161616;; box-shadow: 0 0 0 0.25rem rgba(239, 164, 93, 0.25); }
 .form-check-input:checked { background-color: var(--primary-color); border-color: var(--primary-color); }
 
 /* --- Canvas, Avatar & Pub Styles --- */
@@ -48,10 +48,14 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
     pointer-events: none;
     display: none; /* Hidden by default */
 }
-.avatar-nav { width: auto; height: 64px; border-radius: 10%; border: 2px solid var(--primary-color); object-fit: cover; }
-.avatar-sm { width: 32px; height: 32px; border-radius: 10%; object-fit: cover; background-color: #333; }
+.avatar-nav { width: auto; height: 64px; border-radius:50%; border: 5px outset rgb(170, 170, 170); object-fit: cover; }
+.avatar-sm { width: 32px; height: 32px; border-radius: 25%; object-fit: cover; background-color: #333; }
 .canvas-preview-card img { width: 100%; height: 320px; object-fit: contain; border-bottom: 8px solid var(--border-color); image-rendering: pixelated; }
-.chat-message { display: flex; align-items: flex-start; }
+.chat-message {
+     display: flex; 
+     align-items: flex-start; 
+    color: #333;
+    }
 .chat-message p { word-break: break-word; }
 .pub-container { height: 85vh; }
 
@@ -78,4 +82,55 @@ nav {
     font-size: large;
     font-weight: bolder;
     text-transform: uppercase;
+}
+
+#download-btn {
+    color: rgb(179, 140, 90);
+    background-color: #b8623a;
+    border: none;
+    font-size: xx-large;
+    border-radius:  40% 40% 20% 20%;
+    padding: 0;
+    line-height: 42px;
+    
+}
+#download-btn:hover {
+    background-color: #e2941e;
+}
+
+#download-btn-settings {
+    background-color: #e29c41;
+    color: #000;
+    border-color: #dda222;
+}
+
+#download-btn-settings:hover {
+    background-color: #f0a83b;
+}
+
+#brush-size-display {
+    background-color: #b8623a;
+}
+
+#zoom-slider::-webkit-slider-thumb, #brush-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    background: #b8623a; 
+  } 
+
+  ::selection {
+    color: white;
+    background: #b8623a;
+  }
+
+  .alert-info {
+    color: #b8623a;
+    background-color: #e9d5bb;
+    border-color: #b8623a;
+}
+
+.btn-info:hover {
+    background-color: #e7ba7d;
+    border-color: #b36c2a;
+
 }
