@@ -6,7 +6,7 @@
     --text-light: #ffffff;
     --text-muted: #8F9BB3;
     --primary-color: #c25e24;
-    --primary-hover: #b36c2a;
+    --primary-hover: #e09a58;
     --success-color: #00B383;
     --danger-color: #8f2a2ade;
     --info-color: #e2b741;
@@ -22,6 +22,7 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
 .btn-primary:hover { background-color: var(--primary-hover); border-color: var(--primary-hover); }
 .btn-success { background-color: var(--success-color); border-color: var(--success-color); }
 .btn-danger { background-color: var(--danger-color); border-color: var(--danger-color); }
+.btn-danger:hover { background-color: rgb(163, 69, 69); border-color: var(--danger-color); }
 .btn-info { background-color: var(--info-color); border-color: var(--info-color); }
 .form-control, .form-select { background-color: white;  color: #161616; }
 .form-control:focus, .form-select:focus { background-color: white; border-color: var(--primary-color); color: #161616;; box-shadow: 0 0 0 0.25rem rgba(239, 164, 93, 0.25); }
@@ -68,6 +69,9 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
 
 .card {
     border: 8px solid ;
+}
+.card-img-top {
+    padding: 10px;
 }
 
 main {
@@ -133,4 +137,25 @@ nav {
     background-color: #e7ba7d;
     border-color: #b36c2a;
 
+}
+
+#btn-add-pub {
+    margin-bottom: 24px;
+}
+
+#my-pub-cards {
+    margin-bottom: 40px;
+}
+
+#pub-name-public-private {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#pub-name-public-private span {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
 }
