@@ -71,14 +71,21 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin":
+            return apology("Admin access required", 403)
+        return f(*args, **kwargs)
+    return decorated_function
+
 def apology(message, code=400):
     return render_template("apology.html", top=code, bottom=message), code
 
 # --- All HTTP Routes ---
 @app.route("/")
 def index():
-    if session.get("user_id") or session.get("guest_name"):
-        return redirect("/dashboard")
+    if session.get("user_id") or session.get("guest_name"): return redirect("/dashboard")
     return redirect("/login")
 
 @app.route("/dashboard")
@@ -250,8 +257,8 @@ def settings():
 def friends():
     user_id = session["user_id"]
     friends_list = db.execute("SELECT u.id, u.username FROM users u JOIN friendships f ON (u.id=f.user_one_id OR u.id=f.user_two_id) WHERE (f.user_one_id=? OR f.user_two_id=?) AND f.status='accepted' AND u.id!=?", user_id, user_id, user_id)
-    pending_received = db.execute("SELECT f.id, u.username, u.id as user_id FROM friendships f JOIN users u ON f.user_one_id=u.id WHERE f.user_two_id=? AND f.status='pending'", user_id)
-    other_users = db.execute("SELECT id, username FROM users WHERE id != ? AND id NOT IN (SELECT user_one_id FROM friendships WHERE user_two_id=?) AND id NOT IN (SELECT user_two_id FROM friendships WHERE user_one_id=?)", user_id, user_id, user_id)
+    pending_received = db.execute("SELECT f.id, u.username, u.id as user_id FROM friendships f JOIN users u ON f.action_user_id = u.id WHERE (f.user_one_id = ? OR f.user_two_id = ?) AND f.status = 'pending' AND f.action_user_id != ?", user_id, user_id, user_id)
+    other_users = db.execute("SELECT id, username FROM users WHERE id != ? AND id != 0 AND id NOT IN (SELECT user_one_id FROM friendships WHERE user_two_id = ?) AND id NOT IN (SELECT user_two_id FROM friendships WHERE user_one_id = ?)", user_id, user_id, user_id)
     return render_template("friends.html", friends=friends_list, pending_received=pending_received, other_users=other_users)
 
 @app.route("/send_request/<int:recipient_id>", methods=["POST"])
@@ -270,8 +277,9 @@ def send_request(recipient_id):
 @app.route("/accept_request/<int:friendship_id>", methods=["POST"])
 @login_required
 def accept_request(friendship_id):
-    friendship = db.execute("SELECT * FROM friendships WHERE id=?", friendship_id)
-    if not friendship or friendship[0]['user_two_id'] != session['user_id']: return apology("Invalid request", 403)
+    user_id = session['user_id']
+    friendship = db.execute("SELECT * FROM friendships WHERE id = ? AND (user_one_id = ? OR user_two_id = ?) AND action_user_id != ?", friendship_id, user_id, user_id, user_id)
+    if not friendship: return apology("Invalid request", 403)
     db.execute("UPDATE friendships SET status='accepted' WHERE id=?", friendship_id)
     flash("Friend request accepted!")
     return redirect("/friends")
@@ -279,9 +287,81 @@ def accept_request(friendship_id):
 @app.route("/decline_request/<int:friendship_id>", methods=["POST"])
 @login_required
 def decline_request(friendship_id):
-    db.execute("DELETE FROM friendships WHERE id=? AND (user_one_id=? OR user_two_id=?)", friendship_id, session['user_id'], session['user_id'])
-    flash("Friend request handled.")
+    user_id = session['user_id']
+    friendship = db.execute("SELECT * FROM friendships WHERE id = ? AND (user_one_id = ? OR user_two_id = ?) AND action_user_id != ?", friendship_id, user_id, user_id, user_id)
+    if not friendship: return apology("Invalid request", 403)
+    db.execute("DELETE FROM friendships WHERE id=?", friendship_id)
+    flash("Friend request declined.")
     return redirect("/friends")
+
+@app.route("/unfriend/<int:friend_id>", methods=["POST"])
+@login_required
+def unfriend(friend_id):
+    user_id = session["user_id"]
+    user_one = min(user_id, friend_id)
+    user_two = max(user_id, friend_id)
+    db.execute("DELETE FROM friendships WHERE user_one_id = ? AND user_two_id = ? AND status = 'accepted'", user_one, user_two)
+    flash("Friend removed.")
+    return redirect("/friends")
+
+# --- Admin Routes ---
+@app.route("/admin")
+@login_required
+@admin_required
+def admin_panel():
+    all_users = db.execute("SELECT id, username, role FROM users WHERE id != 0")
+    # UPDATED: Fetch canvas_id for previews
+    all_pubs = db.execute("SELECT p.id, p.name, p.canvas_id, u.username as owner_name, p.is_private FROM pubs p LEFT JOIN users u ON p.owner_id = u.id")
+    return render_template("admin.html", users=all_users, pubs=all_pubs)
+
+@app.route("/admin/delete_user/<int:user_id>", methods=["POST"])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    if user_id == session["user_id"]: return apology("Cannot delete yourself", 400)
+    db.execute("DELETE FROM pixel_history WHERE modifier_id = ?", user_id)
+    user_pubs = db.execute("SELECT id FROM pubs WHERE owner_id = ?", user_id)
+    for pub in user_pubs:
+        admin_delete_pub(pub["id"], perform_redirect=False)
+    db.execute("DELETE FROM users WHERE id = ?", user_id)
+    flash("User and all their data have been deleted.")
+    return redirect("/admin")
+
+@app.route("/admin/delete_pub/<int:pub_id>", methods=["POST"])
+@login_required
+@admin_required
+def admin_delete_pub(pub_id, perform_redirect=True):
+    pub_info = db.execute("SELECT canvas_id FROM pubs WHERE id = ?", pub_id)
+    if not pub_info:
+        if perform_redirect: flash("Pub not found.")
+        return redirect("/admin")
+    canvas_id = pub_info[0]["canvas_id"]
+    db.execute("DELETE FROM chat_messages WHERE pub_id = ?", pub_id)
+    db.execute("DELETE FROM pub_members WHERE pub_id = ?", pub_id)
+    db.execute("DELETE FROM pubs WHERE id = ?", pub_id)
+    db.execute("DELETE FROM pixel_history WHERE canvas_id = ?", canvas_id)
+    db.execute("DELETE FROM canvases WHERE id = ?", canvas_id)
+    if perform_redirect:
+        flash("Pub deleted by admin.")
+        return redirect("/admin")
+    
+@app.route("/admin/toggle_admin/<int:user_id>", methods=["POST"])
+@login_required
+@admin_required
+def toggle_admin(user_id):
+    if user_id == session["user_id"]:
+        return apology("You cannot change your own admin status.", 403)
+    
+    target_user = db.execute("SELECT role FROM users WHERE id = ?", user_id)
+    if not target_user:
+        return apology("User not found.", 404)
+
+    # Toggle the role
+    new_role = "admin" if target_user[0]["role"] == "user" else "user"
+    db.execute("UPDATE users SET role = ? WHERE id = ?", new_role, user_id)
+    
+    flash(f"User role updated to {new_role}.")
+    return redirect("/admin")    
 
 # --- Authentication Routes ---
 @app.route("/login", methods=["GET", "POST"])
@@ -292,7 +372,9 @@ def login():
         if not username or not password: return apology("must provide username and password", 400)
         rows = db.execute("SELECT * FROM users WHERE username = ?", username)
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password): return apology("invalid username and/or password", 403)
-        session["user_id"], session["username"], session["role"] = rows[0]["id"], rows[0]["username"], rows[0]["role"]
+        session["user_id"] = rows[0]["id"]
+        session["username"] = rows[0]["username"]
+        session["role"] = rows[0]["role"]
         flash("Logged in successfully!")
         return redirect("/")
     return render_template("login.html")
