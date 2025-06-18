@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const brushSlider = document.getElementById('brush-slider');
     const brushSizeDisplay = document.getElementById('brush-size-display');
     const clearButton = document.getElementById('clear-button');
-    const downloadBtn = document.getElementById('download-btn'); // New element
+    const downloadBtn = document.getElementById('download-btn-settings'); // UPDATED ID
     const avatarForm = document.getElementById('avatar-form');
     const avatarDataInput = document.getElementById('avatar-data-input');
     const ctx = canvas.getContext('2d');
@@ -87,11 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
             brushSizeDisplay.textContent = brushSize;
         });
         
-        // NEW: Download button listener
         downloadBtn.addEventListener('click', () => {
             const link = document.createElement('a');
             link.download = 'avatar.png';
-            // This captures the internal 32x32 canvas, not the scaled display version
             link.href = canvas.toDataURL('image/png');
             link.click();
         });

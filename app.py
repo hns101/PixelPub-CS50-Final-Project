@@ -38,7 +38,7 @@ def initialize_database():
         print("Creating system user for guests...")
         cur.execute("INSERT OR IGNORE INTO users (id, username, hash, role) VALUES (0, '__GUEST__', '', 'guest')")
 
-    community_pubs_data = [("The 8-Bit Bar", 48, 48), ("The Doodle Den", 64, 32), ("The Canvas Corner", 128, 128)]
+    community_pubs_data = [("The Guest Pub", 128, 128), ("The 8-Bit Bar", 48, 48), ("The Doodle Den", 64, 32), ("The Canvas Corner", 128, 128)]
     for name, width, height in community_pubs_data:
         pub_exists = cur.execute("SELECT id FROM pubs WHERE name = ? AND owner_id IS NULL", (name,)).fetchone()
         if pub_exists is None:
@@ -77,17 +77,26 @@ def apology(message, code=400):
 # --- All HTTP Routes ---
 @app.route("/")
 def index():
-    if session.get("user_id"): return redirect("/dashboard")
+    if session.get("user_id") or session.get("guest_name"):
+        return redirect("/dashboard")
     return redirect("/login")
 
 @app.route("/dashboard")
-@login_required
 def dashboard():
-    user_id = session["user_id"]
-    my_pubs = db.execute("SELECT p.* FROM pubs p JOIN pub_members pm ON p.id = pm.pub_id WHERE pm.user_id = ? AND p.owner_id IS NOT NULL", user_id)
-    lobby_pub = db.execute("SELECT * FROM pubs WHERE name = 'The Grand Lobby' LIMIT 1")
-    other_community_pubs = db.execute("SELECT * FROM pubs WHERE owner_id IS NULL AND name != 'The Grand Lobby'")
-    return render_template("dashboard.html", my_pubs=my_pubs, lobby_pub=lobby_pub[0] if lobby_pub else None, community_pubs=other_community_pubs)
+    user_id = session.get("user_id")
+    guest_name = session.get("guest_name")
+
+    if not user_id and not guest_name:
+        return redirect("/login")
+
+    my_pubs = []
+    if user_id:
+        my_pubs = db.execute("SELECT p.* FROM pubs p JOIN pub_members pm ON p.id = pm.pub_id WHERE pm.user_id = ? AND p.owner_id IS NOT NULL", user_id)
+    
+    lobby_pub = db.execute("SELECT * FROM pubs WHERE name = 'The Guest Pub' LIMIT 1")
+    community_pubs = db.execute("SELECT * FROM pubs WHERE owner_id IS NULL AND name != 'The Guest Pub'")
+    
+    return render_template("dashboard.html", my_pubs=my_pubs, lobby_pub=lobby_pub[0] if lobby_pub else None, community_pubs=community_pubs)
 
 @app.route("/create_pub", methods=["GET", "POST"])
 @login_required
@@ -102,7 +111,8 @@ def create_pub():
         except (ValueError, TypeError):
             return apology("Width and height must be valid numbers.", 400)
         if not name or len(name) > 50: return apology("Invalid pub name", 400)
-        if not (16 <= width <= 256 and 16 <= height <= 256): return apology("Width and height must be between 16 and 128.", 400)
+        if not (16 <= width <= 256 and 16 <= height <= 256): 
+            return apology("Width and height must be between 16 and 256.", 400)
         canvas_name = f"{name}'s Canvas"
         initial_data = json.dumps([['#FFFFFF' for _ in range(width)] for _ in range(height)])
         canvas_id = db.execute("INSERT INTO canvases (name, width, height, owner_id, canvas_data) VALUES (?, ?, ?, ?, ?)", canvas_name, width, height, user_id, initial_data)
@@ -122,8 +132,9 @@ def pub(pub_id):
     if not pub_info: return apology("Pub not found", 404)
     pub_info = pub_info[0]
 
-    if guest_name and pub_info["name"] != "The Grand Lobby":
-        return apology("Guests can only access The Grand Lobby.", 403)
+    if guest_name and pub_info["name"] != "The Guest Pub":
+        return apology("Guests can only access The Guest Pub.", 403)
+        
     if user_id:
         member_check = db.execute("SELECT * FROM pub_members WHERE pub_id = ? AND user_id = ?", pub_id, user_id)
         if not member_check and pub_info["is_private"]: return apology("This pub is private.", 403)
@@ -158,7 +169,6 @@ def toggle_pub_privacy(pub_id):
     pub_info = db.execute("SELECT owner_id, is_private FROM pubs WHERE id = ?", pub_id)
     if not pub_info or pub_info[0]["owner_id"] != session["user_id"]:
         return apology("You do not have permission to modify this pub.", 403)
-    
     new_status = not pub_info[0]["is_private"]
     db.execute("UPDATE pubs SET is_private = ? WHERE id = ?", new_status, pub_id)
     flash(f"Pub is now {'Private' if new_status else 'Public'}.")
@@ -170,14 +180,12 @@ def delete_pub(pub_id):
     pub_info = db.execute("SELECT owner_id, canvas_id FROM pubs WHERE id = ?", pub_id)
     if not pub_info or pub_info[0]["owner_id"] != session["user_id"]:
         return apology("You do not have permission to delete this pub.", 403)
-
     canvas_id = pub_info[0]["canvas_id"]
     db.execute("DELETE FROM chat_messages WHERE pub_id = ?", pub_id)
     db.execute("DELETE FROM pub_members WHERE pub_id = ?", pub_id)
     db.execute("DELETE FROM pubs WHERE id = ?", pub_id)
     db.execute("DELETE FROM pixel_history WHERE canvas_id = ?", canvas_id)
     db.execute("DELETE FROM canvases WHERE id = ?", canvas_id)
-
     flash("Pub and all its data have been permanently deleted.")
     return redirect("/dashboard")
 
@@ -293,7 +301,7 @@ def login():
 def guest_login():
     session.clear()
     session["guest_name"] = f"Guest{random.randint(1000, 9999)}"
-    lobby = db.execute("SELECT id FROM pubs WHERE name = 'The Grand Lobby'")
+    lobby = db.execute("SELECT id FROM pubs WHERE name = 'The Guest Pub'")
     if lobby:
         return redirect(f"/pub/{lobby[0]['id']}")
     return apology("Main community hub not found.", 500)
@@ -343,11 +351,9 @@ def handle_save_canvas_state(data):
 @socketio.on('log_pixel_history')
 def handle_log_pixel_history(data):
     user_id = session.get('user_id')
-    if not user_id: return # Only log history for registered users
-
+    if not user_id: return
     canvas_id, pixels = data.get('canvas_id'), data.get('pixels')
     if not canvas_id or not pixels: return
-    
     for pixel in pixels:
         db.execute("INSERT INTO pixel_history (canvas_id, x, y, modifier_id, color) VALUES (?, ?, ?, ?, ?)", canvas_id, pixel['x'], pixel['y'], user_id, pixel['color'])
     print(f"Logged {len(pixels)} pixels to history for canvas {canvas_id} by user {user_id}")

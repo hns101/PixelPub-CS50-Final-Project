@@ -5,8 +5,15 @@
 {% block main %}
 <div class="container">
 
+    {% if session.user_id %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Dashboard</h2>
+    </div>
+    {% else %}
+    <h2 class="text-center mb-4">Welcome, {{ session.guest_name }}!</h2>
+    {% endif %}
 
-    <!-- Other Community Pubs -->
+    <!-- Community Pubs -->
     <h4>Community Pubs</h4>
     <p class="text-muted">More shared spaces to draw and chat with other members.</p>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
@@ -27,10 +34,11 @@
         {% endfor %}
     </div>
 
-    <!-- My Pubs -->
+    <!-- My Pubs (Only for logged-in users) -->
+    {% if session.user_id %}
     <h4>My Pubs</h4>
     <p class="text-muted">Pubs you own or are a member of.</p>
-    <a href="/create_pub" class="btn btn-primary" id="btn-add-pub">Create New Pub</a>
+    <a href="/create_pub" class="btn btn-primary mb-3" id="btn-add-pub">Create New Pub</a>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="my-pub-cards">
         {% for pub in my_pubs %}
             <div class="col">
@@ -54,27 +62,28 @@
             <div class="col-12"><p>You haven't joined or created any pubs yet.</p></div>
         {% endfor %}
     </div>
-
-     <!-- The Grand Lobby -->
-     <h4>The Grand Lobby</h4>
-     <p class="text-muted">The main hub for everyone, including guests.</p>
-     <div class="row mb-5">
-         {% if lobby_pub %}
-             <div class="col-lg-4 col-md-6">
-                 <div class="card h-100 canvas-preview-card">
-                     <img src="/canvas_preview/{{ lobby_pub.canvas_id }}.png" class="card-img-top" alt="{{ lobby_pub.name }} Preview">
-                     <div class="card-body">
-                         <h5 class="card-title">{{ lobby_pub.name }}</h5>
-                         <p class="card-text">A shared canvas for everyone.</p>
-                     </div>
-                     <div class="card-footer">
-                         <a href="/pub/{{ lobby_pub.id }}" class="btn btn-info w-100">Enter The Lobby</a>
-                     </div>
-                 </div>
-             </div>
-         {% else %}
-             <div class="col-12"><p>The community hub is currently unavailable.</p></div>
-         {% endif %}
-     </div>
+    {% endif %}
+    
+    <!-- The Guest Pub -->
+    <h4 class="mt-5">The Guest Pub</h4>
+    <p class="text-muted">The main hub for everyone, including guests.</p>
+    <div class="row mb-5">
+        {% if lobby_pub %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 canvas-preview-card">
+                    <img src="/canvas_preview/{{ lobby_pub.canvas_id }}.png" class="card-img-top" alt="{{ lobby_pub.name }} Preview">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ lobby_pub.name }}</h5>
+                        <p class="card-text">A shared canvas for everyone.</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/pub/{{ lobby_pub.id }}" class="btn btn-info w-100">Enter The Guest Pub</a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12"><p>The guest hub is currently unavailable.</p></div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
