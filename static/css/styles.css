@@ -49,7 +49,7 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
     pointer-events: none;
     display: none; /* Hidden by default */
 }
-.avatar-nav { width: auto; height: 64px; border-radius:50%; border: 5px outset rgb(170, 170, 170); object-fit: cover; }
+.avatar-nav { width: auto; height: 64px; border-radius:50%; border: 5px solid rgb(236, 184, 10); object-fit: cover; }
 .avatar-sm { width: auto; height: 44px; border-radius: 25%; object-fit: cover; background-color: #333; margin-top: 8px; }
 .canvas-preview-card img { width: 100%; height: 320px; object-fit: contain; border-bottom: 8px solid var(--border-color); image-rendering: pixelated; }
 .chat-message {

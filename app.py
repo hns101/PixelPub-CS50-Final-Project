@@ -74,7 +74,7 @@ def login_required(f):
 def apology(message, code=400):
     return render_template("apology.html", top=code, bottom=message), code
 
-# --- Routes ---
+# --- All HTTP Routes ---
 @app.route("/")
 def index():
     if session.get("user_id"): return redirect("/dashboard")
@@ -151,6 +151,35 @@ def invite_to_pub(pub_id):
     except:
         flash("This user is already a member.")
     return redirect(f"/pub/{pub_id}")
+
+@app.route("/toggle_pub_privacy/<int:pub_id>", methods=["POST"])
+@login_required
+def toggle_pub_privacy(pub_id):
+    pub_info = db.execute("SELECT owner_id, is_private FROM pubs WHERE id = ?", pub_id)
+    if not pub_info or pub_info[0]["owner_id"] != session["user_id"]:
+        return apology("You do not have permission to modify this pub.", 403)
+    
+    new_status = not pub_info[0]["is_private"]
+    db.execute("UPDATE pubs SET is_private = ? WHERE id = ?", new_status, pub_id)
+    flash(f"Pub is now {'Private' if new_status else 'Public'}.")
+    return redirect(f"/pub/{pub_id}")
+
+@app.route("/delete_pub/<int:pub_id>", methods=["POST"])
+@login_required
+def delete_pub(pub_id):
+    pub_info = db.execute("SELECT owner_id, canvas_id FROM pubs WHERE id = ?", pub_id)
+    if not pub_info or pub_info[0]["owner_id"] != session["user_id"]:
+        return apology("You do not have permission to delete this pub.", 403)
+
+    canvas_id = pub_info[0]["canvas_id"]
+    db.execute("DELETE FROM chat_messages WHERE pub_id = ?", pub_id)
+    db.execute("DELETE FROM pub_members WHERE pub_id = ?", pub_id)
+    db.execute("DELETE FROM pubs WHERE id = ?", pub_id)
+    db.execute("DELETE FROM pixel_history WHERE canvas_id = ?", canvas_id)
+    db.execute("DELETE FROM canvases WHERE id = ?", canvas_id)
+
+    flash("Pub and all its data have been permanently deleted.")
+    return redirect("/dashboard")
 
 @app.route("/canvas_preview/<int:canvas_id>.png")
 def canvas_preview(canvas_id):
@@ -299,11 +328,8 @@ def handle_join_pub(data):
 
 @socketio.on('place_pixel')
 def handle_place_pixel(data):
-    user_id, guest_name = session.get('user_id'), session.get('guest_name')
-    if not user_id and not guest_name: return
-    pub_id, canvas_id, x, y, color = data.get('pub_id'), data.get('canvas_id'), data['x'], data['y'], data['color']
-    if user_id:
-        db.execute("INSERT INTO pixel_history (canvas_id, x, y, modifier_id, color) VALUES (?, ?, ?, ?, ?)", canvas_id, x, y, user_id, color)
+    if 'user_id' not in session and 'guest_name' not in session: return
+    pub_id = data.get('pub_id')
     emit('pixel_placed', data, room=f"pub_{pub_id}", include_self=False)
 
 @socketio.on('save_canvas_state')
@@ -313,6 +339,18 @@ def handle_save_canvas_state(data):
     if not canvas_id or not canvas_data: return
     db.execute("UPDATE canvases SET canvas_data = ? WHERE id = ?", json.dumps(canvas_data), canvas_id)
     print(f"Canvas {canvas_id} saved.")
+    
+@socketio.on('log_pixel_history')
+def handle_log_pixel_history(data):
+    user_id = session.get('user_id')
+    if not user_id: return # Only log history for registered users
+
+    canvas_id, pixels = data.get('canvas_id'), data.get('pixels')
+    if not canvas_id or not pixels: return
+    
+    for pixel in pixels:
+        db.execute("INSERT INTO pixel_history (canvas_id, x, y, modifier_id, color) VALUES (?, ?, ?, ?, ?)", canvas_id, pixel['x'], pixel['y'], user_id, pixel['color'])
+    print(f"Logged {len(pixels)} pixels to history for canvas {canvas_id} by user {user_id}")
 
 @socketio.on('request_history')
 def handle_request_history(data):
