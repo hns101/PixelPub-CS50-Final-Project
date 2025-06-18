@@ -38,7 +38,7 @@ def initialize_database():
         print("Creating system user for guests...")
         cur.execute("INSERT OR IGNORE INTO users (id, username, hash, role) VALUES (0, '__GUEST__', '', 'guest')")
 
-    community_pubs_data = [("The Grand Lobby", 128, 128), ("The Garden", 48, 48), ("The City", 64, 32), ("The Ocean", 32, 64)]
+    community_pubs_data = [("The 8-Bit Bar", 48, 48), ("The Doodle Den", 64, 32), ("The Canvas Corner", 128, 128)]
     for name, width, height in community_pubs_data:
         pub_exists = cur.execute("SELECT id FROM pubs WHERE name = ? AND owner_id IS NULL", (name,)).fetchone()
         if pub_exists is None:
@@ -102,7 +102,7 @@ def create_pub():
         except (ValueError, TypeError):
             return apology("Width and height must be valid numbers.", 400)
         if not name or len(name) > 50: return apology("Invalid pub name", 400)
-        if not (16 <= width <= 128 and 16 <= height <= 128): return apology("Width and height must be between 16 and 128.", 400)
+        if not (16 <= width <= 256 and 16 <= height <= 256): return apology("Width and height must be between 16 and 128.", 400)
         canvas_name = f"{name}'s Canvas"
         initial_data = json.dumps([['#FFFFFF' for _ in range(width)] for _ in range(height)])
         canvas_id = db.execute("INSERT INTO canvases (name, width, height, owner_id, canvas_data) VALUES (?, ?, ?, ?, ?)", canvas_name, width, height, user_id, initial_data)
