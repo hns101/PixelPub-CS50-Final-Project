@@ -62,7 +62,9 @@ app.config["SECRET_KEY"] = "a_super_secret_key_for_socketio_final"
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
-socketio = SocketIO(app)
+
+# UPDATED: Added CORS for deployment
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 def login_required(f):
     @wraps(f)
@@ -304,13 +306,11 @@ def unfriend(friend_id):
     flash("Friend removed.")
     return redirect("/friends")
 
-# --- Admin Routes ---
 @app.route("/admin")
 @login_required
 @admin_required
 def admin_panel():
     all_users = db.execute("SELECT id, username, role FROM users WHERE id != 0")
-    # UPDATED: Fetch canvas_id for previews
     all_pubs = db.execute("SELECT p.id, p.name, p.canvas_id, u.username as owner_name, p.is_private FROM pubs p LEFT JOIN users u ON p.owner_id = u.id")
     return render_template("admin.html", users=all_users, pubs=all_pubs)
 
@@ -344,24 +344,20 @@ def admin_delete_pub(pub_id, perform_redirect=True):
     if perform_redirect:
         flash("Pub deleted by admin.")
         return redirect("/admin")
-    
+
 @app.route("/admin/toggle_admin/<int:user_id>", methods=["POST"])
 @login_required
 @admin_required
 def toggle_admin(user_id):
     if user_id == session["user_id"]:
         return apology("You cannot change your own admin status.", 403)
-    
     target_user = db.execute("SELECT role FROM users WHERE id = ?", user_id)
     if not target_user:
         return apology("User not found.", 404)
-
-    # Toggle the role
     new_role = "admin" if target_user[0]["role"] == "user" else "user"
     db.execute("UPDATE users SET role = ? WHERE id = ?", new_role, user_id)
-    
     flash(f"User role updated to {new_role}.")
-    return redirect("/admin")    
+    return redirect("/admin")
 
 # --- Authentication Routes ---
 @app.route("/login", methods=["GET", "POST"])
