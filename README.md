@@ -1,58 +1,69 @@
-# PixelPub: A Real-Time Collaborative Pixel Art Canvas
+# PixelPub: A Real-Time Social Pixel Art Platform
 
-#### Video Demo: 
+#### Video Demo: --
 > **Author**: Hans Bregman  
 > **GitHub**: hns101 | **edX**: ------  
 > **Location**: Lutjewinkel, North Holland, Netherlands  
-> **Date**: June 14, 2025
+> **Date**: June 19, 2025
 
 ---
 
 ## About The Project
 
-**PixelPub** is a dynamic, multi-user web application that provides a digital space for creating and sharing pixel art. Inspired by collaborative projects like Reddit's `r/place`, PixelPub allows users to draw on their own private canvases, share them in a public gallery, and contribute to large-scale community masterpieces in real-time.
+**PixelPub** is a dynamic, multi-user web application that provides a digital space for creating and sharing pixel art. The project has evolved from a simple drawing tool into a feature-rich social platform where users can collaborate in real-time. The core concept is the "Pub," a dedicated space containing a shared canvas and an integrated chat room.
 
-The project was developed as a final project for Harvard's CS50x, combining a Python Flask backend with a highly interactive JavaScript frontend. The core of the application is its real-time engine, built using WebSockets, which ensures that when one user places a pixel, it appears instantly on the screens of all other connected users. This creates a lively and engaging collaborative environment.
+This application was developed as a final project for Harvard's CS50x, combining a Python Flask backend with a highly interactive JavaScript frontend. Its real-time engine, built with **Flask-SocketIO**, ensures that when one user draws a pixel or sends a message, the update appears instantly on the screens of all other users in the same pub.
 
-Beyond simple drawing, PixelPub features a unique **pixel history** system on community canvases. By hovering over any pixel, users can see which user last modified it and when, adding a layer of social accountability and history to the shared creations.
+A key feature is the platform's accessibility, offering a **Guest Mode** that allows new visitors to immediately join a public "Guest Hub" without needing an account. Registered users can create their own private or public pubs, invite friends, customize their profiles with pixel art avatars, and interact with the wider community.
 
 ---
 
 ## Key Features
 
-* **Real-Time Collaboration:** Utilizes **Flask-SocketIO** to broadcast drawing events instantly to all connected clients.
-* **User Authentication:** Secure registration and login system to manage user accounts and creations.
-* **Personal Canvases:** Logged-in users can create, save, and manage their own private canvases of various sizes.
-* **Public Gallery:** Users can choose to make their personal canvases public, showcasing their work in a central gallery for everyone to see.
-* **Community Canvases:** Three large, shared canvases are available for all users to contribute to simultaneously, fostering large-scale collaborative art.
-* **Pixel History:** On community canvases, hovering over a pixel reveals the username of the last person who colored it and the time of the modification.
-* **Admin Panel:** A protected administration dashboard allows for comprehensive user and content moderation, including deleting users and managing the public status of any canvas.
+* **Real-Time Collaboration:** Utilizes **Flask-SocketIO** to broadcast drawing and chat events instantly to all connected clients within a specific pub.
+* **Guest Mode:** Allows users without an account to join a dedicated community hub to experience the platform's core features.
+* **User & Friends System:** Secure user registration and login. Registered users can send and accept friend requests to build a social network.
+* **Custom Avatars:** Users can design their own 32x32 pixel avatars in a dedicated editor, which are displayed next to their chat messages and throughout the application.
+* **The "Pub" System:**
+    * Users can create their own "pubs," which are collaborative spaces with a unique canvas and chat room.
+    * Pubs can be set to public (open to all registered users) or private (invite-only).
+    * Owners can invite friends to their private pubs.
+* **Advanced Drawing Tools:**
+    * **Color Picker:** A full-spectrum color picker for unlimited creative choice.
+    * **Variable Brush Size:** A slider allows users to change their brush diameter from 1 to 8 pixels for both detailed work and filling large areas.
+    * **Zoom & Grid:** Users can zoom in and out of the canvas and toggle a grid overlay for precise pixel placement.
+    * **Download Canvas:** Any canvas, including the avatar editor, can be downloaded as a high-quality PNG image.
+* **Pixel History:** In any pub, hovering over a pixel reveals the username of the registered user who last modified it.
+* **Admin Panel:** A protected dashboard allows administrators to manage the community by deleting users or pubs, and promoting other users to admin status.
 
 ---
 
 ## Technology Stack
 
-This project was built using a modern web development stack, focusing on a balance between a powerful backend and a responsive frontend.
-
-| Technology | Role |
-| :--- | :--- |
-| **Python** | Core backend language. |
-| **Flask** | A micro web framework for routing and application logic. |
-| **Flask-SocketIO** | Enables real-time, bidirectional communication with WebSockets. |
-| **SQLite** | The SQL database engine used for storing all user and canvas data. |
-| **JavaScript** | Powers all client-side interactivity, from drawing to server communication. |
-| **HTML5 Canvas** | The element used for rendering the pixel art grid and handling drawing. |
-| **Bootstrap 5** | A CSS framework used for creating a clean and responsive user interface. |
+| Technology      | Role                                                      |
+| :-------------- | :-------------------------------------------------------- |
+| **Python** | Core backend language.                                    |
+| **Flask** | A web framework for routing and application logic.        |
+| **Flask-SocketIO**| Enables real-time, bidirectional communication.           |
+| **SQLite** | The database engine for storing all application data.     |
+| **Pillow (PIL)**| A Python imaging library used to generate canvas previews. |
+| **JavaScript** | Powers all client-side interactivity and server communication. |
+| **HTML5 Canvas**| The element used for rendering and interacting with pixel art. |
+| **Bootstrap 5** | A CSS framework for creating a clean and responsive UI.      |
 
 ---
 
 ## Database Schema
 
-The application's data is organized across three main tables:
+The application's data is organized across several interconnected tables:
 
-1.  **`users`**: Stores user account information, including a unique ID, username, hashed password, and user role (`'user'` or `'admin'`).
-2.  **`canvases`**: Contains records for every canvas. This includes its name, dimensions, a foreign key to the `owner_id` (or `NULL` for community canvases), and flags for its public or community status. Crucially, the entire state of the canvas is stored as a single `JSON` string in the `canvas_data` column for efficient loading.
-3.  **`pixel_history`**: Specifically for community canvases, this table logs every single pixel placement, storing the `canvas_id`, coordinates (`x`, `y`), the `modifier_id` (the user who placed it), and a `timestamp`.
+1.  **`users`**: Stores account information, including `username`, `password_hash`, `role` (`'user'` or `'admin'`), and `avatar_data` (a JSON string representing the user's 32x32 pixel avatar). A special user with `id=0` is reserved for guest chat messages.
+2.  **`canvases`**: Contains a record for every canvas, storing its `width`, `height`, and the entire state of the canvas as a `JSON` string in the `canvas_data` column for efficient loading.
+3.  **`pubs`**: Defines each collaborative space. It links a `name`, `owner_id`, `is_private` status, and the corresponding `canvas_id`. Community pubs have a `NULL` `owner_id`.
+4.  **`pub_members`**: A relational table tracking which users are members of which pubs.
+5.  **`chat_messages`**: Stores all chat messages, linking them to a `pub_id` and `user_id`. The chat history is limited to the last 100 messages per pub.
+6.  **`friendships`**: Manages the social graph, storing pairs of user IDs and their relationship `status` (e.g., `'pending'` or `'accepted'`).
+7.  **`pixel_history`**: Logs every pixel placed by a registered user in any pub, storing the `canvas_id`, coordinates (`x`, `y`), the `modifier_id` (the user), and a `timestamp`.
 
 ---
 
@@ -62,7 +73,7 @@ To run PixelPub on a local machine, please follow these steps:
 
 1.  **Clone the Repository**
     ```bash
-    git clone --------
+    git clone [https://github.com/hns101/pixelpub.git](https://github.com/hns101/pixelpub.git)
     cd pixelpub
     ```
 
@@ -86,10 +97,10 @@ To run PixelPub on a local machine, please follow these steps:
     ```bash
     python app.py
     ```
-    The application will be available at the given local port.
+    The application will be available at `http://127.0.0.1:5000`.
 
 5.  **(Optional) Become an Admin**
-    To access the admin panel, you must first register a user account through the web interface and then manually update its role in the database.
+    To access the admin panel, you must first register an account through the web interface and then manually update its role in the database.
     ```bash
     # Open the database with the sqlite3 CLI
     sqlite3 project.db
