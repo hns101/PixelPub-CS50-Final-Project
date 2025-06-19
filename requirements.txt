@@ -5,3 +5,4 @@ werkzeug
 Flask-SocketIO
 Pillow
 gunicorn
+eventlet
