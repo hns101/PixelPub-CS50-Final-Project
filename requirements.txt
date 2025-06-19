@@ -4,3 +4,4 @@ cs50
 werkzeug
 Flask-SocketIO
 Pillow
+gunicorn
