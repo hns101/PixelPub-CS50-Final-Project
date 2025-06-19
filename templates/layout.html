@@ -12,7 +12,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-black">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center " href="/">
-                <img src="/static/assets/Pub icon-02.png" alt="PixelPub Logo" style="height: 92px; margin-left: 50px;
+                <img src="/static/assets/Pub icon-02.png" alt="beer icon" style="height: 92px; margin-left: 50px;
                 margin-right: -32px; ">
                 <img src="/static/assets/PixelPub.png" alt="PixelPub Logo" style="height: 92px; padding-top: 10px; margin-left: 20px; ">
                 
@@ -28,11 +28,13 @@
                         
                     </ul>
                     <ul class="navbar-nav ms-auto d-flex align-items-center">
-                        <li class="nav-item"><a class="nav-link" href="/friends">Friends</a></li>
-                         <!-- <li class="nav-item"><a class="nav-link" href="/settings">Settings</a></li> -->
-                         {% if session.role == 'admin' %}<li class="nav-item"><a class="nav-link text-danger" href="/admin">Admin</a></li>{% endif %}
+                        <li class="nav-item"><a class="nav-link" href="/friends">
+                            <img src="/static/assets/friends-01.png" alt="Friends Icon" style="height: 55px;  "></a></li>
+                         {% if session.role == 'admin' %}<li class="nav-item"><a class="nav-link text-danger" href="/admin">
+                             <img src="/static/assets/link icons-02.png" alt="Admin icon" style="height: 50px;"></a></li>{% endif %}
                          <li class="nav-item ms-2"><a href="/settings"><img src="/avatar/{{ session.user_id }}.png" alt="My Avatar" class="avatar-nav"></a></li>
-                         <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
+                         <li class="nav-item"><a class="nav-link" href="/logout">
+                             <img src="/static/assets/link icons-03.png" alt="exit icon" style="height: 42px; margin-left: 5px; "></a></li>
                     </ul>
                 {% elif session.guest_name %}
                     <!-- Guest View -->
