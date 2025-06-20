@@ -8,3 +8,5 @@ Flask-SocketIO==5.3.6
 python-engineio==4.9.0
 python-socketio==5.11.1
 eventlet
+gevent
+gevent-websocket
