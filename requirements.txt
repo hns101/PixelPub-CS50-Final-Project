@@ -4,8 +4,6 @@ cs50
 werkzeug
 Pillow
 gunicorn
-
-Pinned versions for stability on deployment platforms
 Flask-SocketIO==5.3.6
 python-engineio==4.9.0
 python-socketio==5.11.1
