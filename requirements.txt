@@ -9,3 +9,5 @@ python-socketio==5.11.1
 eventlet
 Flask-SQLAlchemy
 SQLAlchemy
+gevent
+gevent-websocket
