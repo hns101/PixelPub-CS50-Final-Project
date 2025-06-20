@@ -5,6 +5,7 @@ import random
 from flask import Flask, flash, redirect, render_template, request, session, Response
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix # Import for deployment
 from flask_socketio import SocketIO, emit, join_room
 from cs50 import SQL
 from functools import wraps
@@ -63,7 +64,9 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# UPDATED: Added CORS for deployment. This is the crucial fix.
+# Add ProxyFix Middleware for deployment
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 def login_required(f):
