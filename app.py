@@ -26,7 +26,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 Session(app)
 db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # --- Database Models (SQLAlchemy ORM) ---
 class User(db.Model):
@@ -97,7 +97,8 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get("role") != "admin": return apology("Admin access required", 403)
+        if session.get("role") != "admin":
+            return apology("Admin access required", 403)
         return f(*args, **kwargs)
     return decorated_function
 
@@ -177,13 +178,16 @@ def pub(pub_id):
 def invite_to_pub(pub_id):
     pub_info = Pub.query.get_or_404(pub_id)
     if pub_info.owner_id != session["user_id"]: return apology("Only the pub owner can invite friends", 403)
+    
     friend_id = request.form.get("friend_id")
     if not friend_id: return apology("No friend selected", 400)
+    
     if not PubMember.query.filter_by(pub_id=pub_id, user_id=friend_id).first():
         db.session.add(PubMember(pub_id=pub_id, user_id=friend_id))
         db.session.commit()
         flash("Friend invited to the pub!")
     else: flash("This user is already a member.")
+        
     return redirect(f"/pub/{pub_id}")
 
 @app.route("/delete_pub/<int:pub_id>", methods=["POST"])
@@ -191,6 +195,7 @@ def invite_to_pub(pub_id):
 def delete_pub(pub_id):
     pub_info = Pub.query.get_or_404(pub_id)
     if pub_info.owner_id != session["user_id"]: return apology("You do not have permission to delete this pub.", 403)
+    
     ChatMessage.query.filter_by(pub_id=pub_id).delete()
     db.session.delete(pub_info)
     db.session.commit()
@@ -329,21 +334,6 @@ def login():
         return redirect("/")
     return render_template("login.html")
 
-@app.route("/guest_login", methods=["POST"])
-def guest_login():
-    session.clear()
-    session["guest_name"] = f"Guest{random.randint(1000, 9999)}"
-    lobby = Pub.query.filter_by(name='The Guest Pub').first()
-    if lobby:
-        return redirect(f"/pub/{lobby.id}")
-    return apology("Main community hub not found.", 500)
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    flash("You have been logged out.")
-    return redirect("/login")
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -361,6 +351,21 @@ def register():
         return redirect("/")
     return render_template("register.html")
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("You have been logged out.")
+    return redirect("/login")
+
+@app.route("/guest_login", methods=["POST"])
+def guest_login():
+    session.clear()
+    session["guest_name"] = f"Guest{random.randint(1000, 9999)}"
+    lobby = Pub.query.filter_by(name='The Guest Pub').first()
+    if lobby:
+        return redirect(f"/pub/{lobby.id}")
+    return apology("Main community hub not found.", 500)
+
 # --- SocketIO Handlers ---
 @socketio.on('join_pub')
 def handle_join_pub(data):
@@ -370,7 +375,7 @@ def handle_join_pub(data):
 @socketio.on('place_pixel')
 def handle_place_pixel(data):
     if 'user_id' not in session and 'guest_name' not in session: return
-    emit('pixel_placed', data, room=f"pub_{data['pub_id']}", include_self=False)
+    emit('pixel_placed', data, room=f"pub_{data.get('pub_id')}", include_self=False)
 
 @socketio.on('save_canvas_state')
 def handle_save_canvas_state(data):
@@ -397,7 +402,7 @@ def handle_log_pixel_history(data):
 
 @socketio.on('request_history')
 def handle_request_history(data):
-    canvas_id, x, y = data['canvas_id'], data['x'], data['y']
+    canvas_id, x, y = data.get('canvas_id'), data.get('x'), data.get('y')
     history_entry = PixelHistory.query.filter_by(canvas_id=canvas_id, x=x, y=y).order_by(PixelHistory.timestamp.desc()).first()
     if history_entry:
         emit('history_response', {'username': history_entry.user.username, 'timestamp': history_entry.timestamp.isoformat()})
@@ -409,7 +414,7 @@ def handle_send_message(data):
     user_id = session.get('user_id')
     username = session.get('username') or session.get('guest_name')
     if not username: return
-    pub_id, content = data['pub_id'], data['content'].strip()
+    pub_id, content = data.get('pub_id'), data.get('content', '').strip()
     if not (1 <= len(content) <= 250): return
     
     user_id_for_db = user_id if user_id is not None else 0
@@ -425,6 +430,7 @@ def handle_send_message(data):
     message_data = {'username': username, 'avatar_id': user_id_for_db, 'content': content}
     emit('new_message', message_data, room=f"pub_{pub_id}")
 
+# This block should be at the very end of the file
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
