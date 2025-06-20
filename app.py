@@ -67,7 +67,7 @@ Session(app)
 # Add ProxyFix Middleware for deployment
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 def login_required(f):
     @wraps(f)

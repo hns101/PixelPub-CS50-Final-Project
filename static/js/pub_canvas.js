@@ -1,13 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Setup & Config ---
-    const socket = io();
+    // UPDATED: Force the connection to use WebSockets.
+    const socket = io({ transports: ["websocket"] });
+
     const canvas = document.getElementById('pixel-canvas');
     const colorPicker = document.getElementById('color-picker');
     const gridToggle = document.getElementById('grid-toggle');
     const zoomSlider = document.getElementById('zoom-slider');
     const brushSlider = document.getElementById('brush-slider');
     const brushSizeDisplay = document.getElementById('brush-size-display');
-    const downloadBtn = document.getElementById('download-btn'); // New element
+    const downloadBtn = document.getElementById('download-btn');
     const chatMessages = document.getElementById('chat-messages');
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
@@ -39,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
         redrawCanvas();
     });
     socket.on('new_message', (data) => appendMessage(data));
-
     socket.on('history_response', (data) => {
         if (data.username) {
             pixelInfoDisplay.innerHTML = `(${lastHoveredPixel.x}, ${lastHoveredPixel.y}) by <strong>${data.username}</strong>`;
@@ -126,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
             brushSizeDisplay.textContent = brushSize;
         });
         
-        // NEW: Download button listener
         downloadBtn.addEventListener('click', () => {
             const link = document.createElement('a');
             link.download = 'pixelpub-art.png';
