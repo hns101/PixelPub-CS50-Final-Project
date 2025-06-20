@@ -5,7 +5,7 @@ import random
 from flask import Flask, flash, redirect, render_template, request, session, Response
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.middleware.proxy_fix import ProxyFix # Import for deployment
+from werkzeug.middleware.proxy_fix import ProxyFix # For deployment
 from flask_socketio import SocketIO, emit, join_room
 from cs50 import SQL
 from functools import wraps
@@ -67,8 +67,8 @@ Session(app)
 # Add ProxyFix Middleware for deployment
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-# UPDATED: Changed async_mode to 'gevent' for deployment
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
+# Using eventlet as the async mode for deployment
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 def login_required(f):
     @wraps(f)
@@ -411,11 +411,6 @@ def register():
     return render_template("register.html")
 
 # --- SocketIO Handlers ---
-# --- SocketIO Handlers ---
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected successfully!')
-
 @socketio.on('join_pub')
 def handle_join_pub(data):
     if 'user_id' not in session and 'guest_name' not in session: return
