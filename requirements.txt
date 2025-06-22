@@ -10,3 +10,4 @@ Flask-SQLAlchemy
 SQLAlchemy
 gevent
 gevent-websocket
+psycopg2-binary
