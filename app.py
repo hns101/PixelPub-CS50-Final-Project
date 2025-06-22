@@ -132,7 +132,7 @@ def pub(pub_id):
         elif not member_check and pub_info.is_private:
             return apology("This pub is private.", 403)
 
-    chat_history = ChatMessage.query.filter_by(pub_id=pub_id).order_by(ChatMessage.timestamp.asc()).limit(100).all()
+    chat_history = ChatMessage.query.options(joinedload(ChatMessage.user)).filter_by(pub_id=pub_id).order_by(ChatMessage.timestamp.asc()).limit(100).all()
     friends_to_invite = []
     if user_id:
         friends_subquery = db.session.query(User.id).join(Friendship, or_(User.id == Friendship.user_one_id, User.id == Friendship.user_two_id)).filter(or_(Friendship.user_one_id == user_id, Friendship.user_two_id == user_id), Friendship.status == 'accepted', User.id != user_id)
