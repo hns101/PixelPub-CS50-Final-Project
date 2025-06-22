@@ -159,10 +159,12 @@ def pub(pub_id):
         
     if user_id:
         member_check = PubMember.query.filter_by(pub_id=pub_id, user_id=user_id).first()
-        if not member_check and pub_info.is_private: return apology("This pub is private.", 403)
-        if not member_check and not pub_info.is_private:
-            db.session.add(PubMember(pub_id=pub_id, user_id=user_id))
-            db.session.commit()
+        if not member_check:
+            if pub_info.is_private:
+                return apology("This pub is private.", 403)
+            else: # If public and not a member, add them
+                db.session.add(PubMember(pub_id=pub_id, user_id=user_id))
+                db.session.commit()
     
     chat_history = ChatMessage.query.filter_by(pub_id=pub_id).order_by(ChatMessage.timestamp.asc()).limit(100).all()
     friends_to_invite = []
