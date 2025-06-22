@@ -29,12 +29,19 @@
             <h4>Pending Requests</h4>
             {% if pending_received %}
                 <ul class="list-group">
-                    {% for request in pending_received %}
+                    {% for friendship, user in pending_received %}
                     <li class="list-group-item bg-dark text-light d-flex align-items-center justify-content-between">
-                        <div><img src="/avatar/{{ request.user_id }}.png" alt="Avatar" class="avatar-sm me-2"> {{ request.username }}</div>
                         <div>
-                            <form action="/accept_request/{{ request.id }}" method="post" class="d-inline"><button type="submit" class="btn btn-success btn-sm">Accept</button></form>
-                            <form action="/decline_request/{{ request.id }}" method="post" class="d-inline"><button type="submit" class="btn btn-danger btn-sm">Decline</button></form>
+                            <img src="/avatar/{{ user.id }}.png" alt="Avatar" class="avatar-sm me-2">
+                            {{ user.username }}
+                        </div>
+                        <div>
+                            <form action="/accept_request/{{ friendship.id }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                            </form>
+                            <form action="/decline_request/{{ friendship.id }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm">Decline</button>
+                            </form>
                         </div>
                     </li>
                     {% endfor %}
@@ -43,7 +50,7 @@
                 <p>No new friend requests.</p>
             {% endif %}
         </div>
-        
+
         <!-- Find New Friends -->
         <div class="col-lg-6">
             <h4>Find New Friends</h4>

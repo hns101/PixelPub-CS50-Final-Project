@@ -246,7 +246,10 @@ def settings():
 def friends():
     user_id = session["user_id"]
     friends_list = User.query.join(Friendship, or_(User.id == Friendship.user_one_id, User.id == Friendship.user_two_id)).filter(or_(Friendship.user_one_id == user_id, Friendship.user_two_id == user_id), Friendship.status == 'accepted', User.id != user_id).all()
-    pending_received = Friendship.query.join(User, Friendship.action_user_id == User.id).filter(or_(Friendship.user_one_id == user_id, Friendship.user_two_id == user_id), Friendship.status == 'pending', Friendship.action_user_id != user_id).all()
+    pending_received = db.session.query(Friendship, User).join(User, Friendship.action_user_id == User.id).filter(
+    or_(Friendship.user_one_id == user_id, Friendship.user_two_id == user_id), 
+    Friendship.status == 'pending', 
+    Friendship.action_user_id != user_id).all()
     
     existing_relations = db.session.query(Friendship.user_one_id).filter(Friendship.user_two_id == user_id).union(db.session.query(Friendship.user_two_id).filter(Friendship.user_one_id == user_id))
     other_users = User.query.filter(User.id != user_id, User.id != 0, User.id.notin_(existing_relations)).all()
