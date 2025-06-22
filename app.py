@@ -94,17 +94,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get("role") != "admin":
-            return apology("Admin access required", 403)
-        return f(*args, **kwargs)
-    return decorated_function
-
-def apology(message, code=400):
-    return render_template("apology.html", top=code, bottom=message), code
-
 # --- All HTTP Routes ---
 @app.route("/")
 def index():
@@ -123,31 +112,6 @@ def dashboard():
     
     return render_template("dashboard.html", my_pubs=my_pubs, lobby_pub=lobby_pub, community_pubs=community_pubs)
 
-@app.route("/create_pub", methods=["GET", "POST"])
-@login_required
-def create_pub():
-    if request.method == "POST":
-        user_id = session["user_id"]
-        name, is_private = request.form.get("name"), request.form.get("is_private") == "true"
-        try: width, height = int(request.form.get("width")), int(request.form.get("height"))
-        except: return apology("Width and height must be valid numbers.", 400)
-        if not name or len(name) > 50: return apology("Invalid pub name", 400)
-        if not (16 <= width <= 256 and 16 <= height <= 256): return apology("Width/height must be between 16 and 256.", 400)
-        
-        new_canvas = Canvas(name=f"{name}'s Canvas", width=width, height=height, canvas_data=json.dumps([['#FFFFFF' for _ in range(width)] for _ in range(height)]))
-        new_pub = Pub(name=name, owner_id=user_id, is_private=is_private, canvas=new_canvas)
-        db.session.add(new_pub)
-        db.session.commit()
-        
-        new_member = PubMember(pub_id=new_pub.id, user_id=user_id)
-        db.session.add(new_member)
-        db.session.commit()
-
-        flash("Pub created successfully!")
-        return redirect(f"/pub/{new_pub.id}")
-    else:
-        return render_template("create_pub.html")
-
 @app.route("/pub/<int:pub_id>")
 def pub(pub_id):
     user_id, guest_name = session.get("user_id"), session.get("guest_name")
@@ -159,13 +123,15 @@ def pub(pub_id):
         
     if user_id:
         member_check = PubMember.query.filter_by(pub_id=pub_id, user_id=user_id).first()
-        if not member_check:
-            if pub_info.is_private:
-                return apology("This pub is private.", 403)
-            else: # If public and not a member, add them
+        if not member_check and not pub_info.is_private:
+            try:
                 db.session.add(PubMember(pub_id=pub_id, user_id=user_id))
                 db.session.commit()
-    
+            except IntegrityError:
+                db.session.rollback() # Ignore if the user was added in a simultaneous request
+        elif not member_check and pub_info.is_private:
+            return apology("This pub is private.", 403)
+
     chat_history = ChatMessage.query.filter_by(pub_id=pub_id).order_by(ChatMessage.timestamp.asc()).limit(100).all()
     friends_to_invite = []
     if user_id:
