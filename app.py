@@ -28,6 +28,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 Session(app)
 db = SQLAlchemy(app)
+# CORRECTED: Restored async_mode='gevent' for deployment
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
 
 # --- Database Models (SQLAlchemy ORM) ---
@@ -96,6 +97,23 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin":
+            return apology("Admin access required", 403)
+        return f(*args, **kwargs)
+    return decorated_function
+
+def apology(message, code=400):
+    """Render message as an apology to user."""
+    def escape(s):
+        for old, new in [("-", "--"), (" ", "-"), ("_", "__"), ("?", "~q"),
+                         ("%", "~p"), ("#", "~h"), ("/", "~s"), ("\"", "''")]:
+            s = s.replace(old, new)
+        return s
+    return render_template("apology.html", top=code, bottom=escape(message)), code
+
 # --- All HTTP Routes ---
 @app.route("/")
 def index():
@@ -114,6 +132,31 @@ def dashboard():
     
     return render_template("dashboard.html", my_pubs=my_pubs, lobby_pub=lobby_pub, community_pubs=community_pubs)
 
+@app.route("/create_pub", methods=["GET", "POST"])
+@login_required
+def create_pub():
+    if request.method == "POST":
+        user_id = session["user_id"]
+        name, is_private = request.form.get("name"), request.form.get("is_private") == "true"
+        try: width, height = int(request.form.get("width")), int(request.form.get("height"))
+        except: return apology("Width and height must be valid numbers.", 400)
+        if not name or len(name) > 50: return apology("Invalid pub name", 400)
+        if not (16 <= width <= 256 and 16 <= height <= 256): return apology("Width/height must be between 16 and 256.", 400)
+        
+        new_canvas = Canvas(name=f"{name}'s Canvas", width=width, height=height, canvas_data=json.dumps([['#FFFFFF' for _ in range(width)] for _ in range(height)]))
+        new_pub = Pub(name=name, owner_id=user_id, is_private=is_private, canvas=new_canvas)
+        db.session.add(new_pub)
+        db.session.commit()
+        
+        new_member = PubMember(pub_id=new_pub.id, user_id=user_id)
+        db.session.add(new_member)
+        db.session.commit()
+
+        flash("Pub created successfully!")
+        return redirect(f"/pub/{new_pub.id}")
+    else:
+        return render_template("create_pub.html")
+
 @app.route("/pub/<int:pub_id>")
 def pub(pub_id):
     user_id, guest_name = session.get("user_id"), session.get("guest_name")
@@ -125,19 +168,17 @@ def pub(pub_id):
         
     if user_id:
         member_check = PubMember.query.filter_by(pub_id=pub_id, user_id=user_id).first()
+        if not member_check and pub_info.is_private: return apology("This pub is private.", 403)
         if not member_check and not pub_info.is_private:
             try:
                 db.session.add(PubMember(pub_id=pub_id, user_id=user_id))
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()
-        elif not member_check and pub_info.is_private:
-            return apology("This pub is private.", 403)
     
-    # FIXED: Eagerly load chat history and process it into a simple list
-    chat_query = ChatMessage.query.options(joinedload(ChatMessage.user)).filter_by(pub_id=pub_id).order_by(ChatMessage.timestamp.asc()).limit(100).all()
+    chat_history_query = ChatMessage.query.options(joinedload(ChatMessage.user)).filter_by(pub_id=pub_id).order_by(ChatMessage.timestamp.asc()).limit(100).all()
     chat_display_data = []
-    for message in chat_query:
+    for message in chat_history_query:
         chat_display_data.append({
             'user_id': message.user_id,
             'username': message.user.username if message.user else 'Guest',
@@ -246,15 +287,12 @@ def settings():
 def friends():
     user_id = session["user_id"]
     friends_list = User.query.join(Friendship, or_(User.id == Friendship.user_one_id, User.id == Friendship.user_two_id)).filter(or_(Friendship.user_one_id == user_id, Friendship.user_two_id == user_id), Friendship.status == 'accepted', User.id != user_id).all()
-    pending_received = db.session.query(Friendship, User).join(User, Friendship.action_user_id == User.id).filter(
-    or_(Friendship.user_one_id == user_id, Friendship.user_two_id == user_id), 
-    Friendship.status == 'pending', 
-    Friendship.action_user_id != user_id).all()
+    pending_received_query = db.session.query(Friendship, User).join(User, Friendship.action_user_id == User.id).filter(or_(Friendship.user_one_id == user_id, Friendship.user_two_id == user_id), Friendship.status == 'pending', Friendship.action_user_id != user_id).all()
     
     existing_relations = db.session.query(Friendship.user_one_id).filter(Friendship.user_two_id == user_id).union(db.session.query(Friendship.user_two_id).filter(Friendship.user_one_id == user_id))
     other_users = User.query.filter(User.id != user_id, User.id != 0, User.id.notin_(existing_relations)).all()
 
-    return render_template("friends.html", friends=friends_list, pending_received=pending_received, other_users=other_users)
+    return render_template("friends.html", friends=friends_list, pending_received=pending_received_query, other_users=other_users)
 
 @app.route("/send_request/<int:recipient_id>", methods=["POST"])
 @login_required
