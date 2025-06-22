@@ -47,10 +47,10 @@
             <div id="chat-messages" class="flex-grow-1 overflow-auto mb-3">
                 {% for message in chat %}
                 <div class="chat-message mb-2">
-                    <img src="/avatar/{{ message.avatar_id }}.png" class="avatar-sm me-2">
+                    <img src="/avatar/{{ message.user_id }}.png" class="avatar-sm me-2">
                     <div>
                         <strong class="me-2">{{ message.username }}</strong>
-                        <small class="text-muted">{{ message.timestamp.strftime('%H:%M') }}</small>
+                        <small class="text-muted">{{ message.timestamp }}</small>
                         <p class="mb-0">{{ message.content }}</p>
                     </div>
                 </div>

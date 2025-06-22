@@ -130,12 +130,20 @@ def pub(pub_id):
                 db.session.add(PubMember(pub_id=pub_id, user_id=user_id))
                 db.session.commit()
             except IntegrityError:
-                db.session.rollback() # Ignore if the user was added in a simultaneous request
+                db.session.rollback()
         elif not member_check and pub_info.is_private:
             return apology("This pub is private.", 403)
-
-    with db.session.begin_nested():
-        chat_history = ChatMessage.query.options(joinedload(ChatMessage.user)).filter_by(pub_id=pub_id).order_by(ChatMessage.timestamp.asc()).limit(100).all()
+    
+    # FIXED: Eagerly load chat history and process it into a simple list
+    chat_query = ChatMessage.query.options(joinedload(ChatMessage.user)).filter_by(pub_id=pub_id).order_by(ChatMessage.timestamp.asc()).limit(100).all()
+    chat_display_data = []
+    for message in chat_query:
+        chat_display_data.append({
+            'user_id': message.user_id,
+            'username': message.user.username if message.user else 'Guest',
+            'timestamp': message.timestamp.strftime('%H:%M'),
+            'content': message.content
+        })
 
     friends_to_invite = []
     if user_id:
@@ -143,7 +151,7 @@ def pub(pub_id):
         members_subquery = db.session.query(PubMember.user_id).filter(PubMember.pub_id == pub_id)
         friends_to_invite = User.query.filter(User.id.in_(friends_subquery), User.id.notin_(members_subquery)).all()
         
-    return render_template("pub.html", pub=pub_info, canvas=pub_info.canvas, chat=chat_history, friends=friends_to_invite)
+    return render_template("pub.html", pub=pub_info, canvas=pub_info.canvas, chat=chat_display_data, friends=friends_to_invite)
 
 @app.route("/invite_to_pub/<int:pub_id>", methods=["POST"])
 @login_required
