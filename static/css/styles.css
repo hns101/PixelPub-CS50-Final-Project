@@ -160,3 +160,6 @@ nav {
     align-self: center;
 }
 
+.btn-primary:focus {
+    background-color:  #b8623a;
+}
