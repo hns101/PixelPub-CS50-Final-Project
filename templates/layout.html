@@ -21,7 +21,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                {% if session.user_id %}
+                {% if session.get("user_id") %}
                     <!-- Logged-in User View -->
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <!-- <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li> -->
@@ -30,7 +30,7 @@
                     <ul class="navbar-nav ms-auto d-flex align-items-center">
                         <li class="nav-item"><a class="nav-link" href="/friends">
                             <img src="/static/assets/friends-01.png" alt="Friends Icon" style="height: 55px;  "></a></li>
-                         {% if session.role == 'admin' %}<li class="nav-item"><a class="nav-link text-danger" href="/admin">
+                            {% if session.get("role") == 'admin' %}<li class="nav-item"><a class="nav-link text-danger" href="/admin">
                              <img src="/static/assets/link icons-02.png" alt="Admin icon" style="height: 50px;"></a></li>{% endif %}
                          <li class="nav-item ms-2"><a href="/settings"><img src="/avatar/{{ session.user_id }}.png" alt="My Avatar" class="avatar-nav"></a></li>
                          <li class="nav-item"><a class="nav-link" href="/logout">
