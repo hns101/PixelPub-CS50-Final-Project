@@ -7,7 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_socketio import SocketIO, emit, join_room
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from functools import wraps
 from PIL import Image, ImageDraw
 import io
@@ -18,7 +18,6 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "a_very_secret_dev_key_for_local_runs")
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
-# Use DATABASE_URL from environment for Render, fallback to local sqlite file
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///project.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
