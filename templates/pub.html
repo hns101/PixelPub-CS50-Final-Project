@@ -50,7 +50,7 @@
                     <img src="/avatar/{{ message.avatar_id }}.png" class="avatar-sm me-2">
                     <div>
                         <strong class="me-2">{{ message.username }}</strong>
-                        <small class="text-muted">{{ message.timestamp.split(' ')[1][:5] }}</small>
+                        <small class="text-muted">{{ message.timestamp.strftime('%H:%M') }}</small>
                         <p class="mb-0">{{ message.content }}</p>
                     </div>
                 </div>
