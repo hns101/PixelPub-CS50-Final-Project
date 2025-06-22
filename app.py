@@ -8,6 +8,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_socketio import SocketIO, emit, join_room
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_, and_
+from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 from functools import wraps
 from PIL import Image, ImageDraw
 import io
