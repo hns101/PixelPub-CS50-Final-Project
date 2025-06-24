@@ -1,12 +1,13 @@
 # PixelPub: A Real-Time Social Pixel Art Platform
 
-#### Video Demo: --
+---
 > **Author**: Hans Bregman  
-> **GitHub**: hns101 | **edX**: ------  
+> **GitHub**: hns101 | **edX**: hns101  
 > **Location**: Lutjewinkel, North Holland, Netherlands  
-> **Date**: June 19, 2025
-> **Showcase Website**: [pixelpub-cs50-final-project.onrender.com](https://pixelpub-cs50-final-project.onrender.com/)
+> **Date**: June 26, 2025  
+---
 
+> **Showcase Website**: [pixelpub-cs50-final-project.onrender.com](https://pixelpub-cs50-final-project.onrender.com/)   
 
 ---
 
