@@ -11,3 +11,4 @@ SQLAlchemy
 gevent
 gevent-websocket
 psycopg2-binary
+eventlet
