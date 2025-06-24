@@ -5,6 +5,8 @@
 > **GitHub**: hns101 | **edX**: ------  
 > **Location**: Lutjewinkel, North Holland, Netherlands  
 > **Date**: June 19, 2025
+> **Showcase Website**: [pixelpub-cs50-final-project.onrender.com](https://pixelpub-cs50-final-project.onrender.com/)
+
 
 ---
 
@@ -67,47 +69,4 @@ The application's data is organized across several interconnected tables:
 
 ---
 
-## Setup and Installation
 
-To run PixelPub on a local machine, please follow these steps:
-
-1.  **Clone the Repository**
-    ```bash
-    git clone [https://github.com/hns101/pixelpub.git](https://github.com/hns101/pixelpub.git)
-    cd pixelpub
-    ```
-
-2.  **Set Up a Virtual Environment** (Recommended)
-    ```bash
-    python -m venv venv
-    # On Windows
-    .\venv\Scripts\activate
-    # On macOS/Linux
-    source venv/bin/activate
-    ```
-
-3.  **Install Dependencies**
-    All required packages are listed in `requirements.txt`. Install them with pip:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Run the Application**
-    The application will automatically create and initialize the `project.db` database file on its first run.
-    ```bash
-    python app.py
-    ```
-    The application will be available at `http://127.0.0.1:5000`.
-
-5.  **(Optional) Become an Admin**
-    To access the admin panel, you must first register an account through the web interface and then manually update its role in the database.
-    ```bash
-    # Open the database with the sqlite3 CLI
-    sqlite3 project.db
-
-    # Run the update command, replacing 'your_admin_user'
-    sqlite> UPDATE users SET role = 'admin' WHERE username = 'your_admin_user';
-
-    # Exit the CLI
-    sqlite> .quit
-    ```
