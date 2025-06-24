@@ -1,12 +1,14 @@
+# setup.py
 import json
-from app import app, db, User, Pub, Canvas, ChatMessage, Friendship, PixelHistory, PubMember
+from app import app, db, User, Pub, Canvas
 
 print("STARTING DATABASE SETUP...")
 
+# Use the app's context to interact with the database
 with app.app_context():
     # Create all database tables based on the models in app.py
     db.create_all()
-    print("Tables created.")
+    print("Tables created (if they didn't exist).")
 
     # Initialization logic for the special guest user
     if not User.query.get(0):

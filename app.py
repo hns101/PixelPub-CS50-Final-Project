@@ -28,8 +28,8 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 Session(app)
 db = SQLAlchemy(app)
-# CORRECTED: Restored async_mode='gevent' for deployment
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
+# CORRECTED: Set async_mode to 'eventlet' to match the Procfile/Render setup
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # --- Database Models (SQLAlchemy ORM) ---
 class User(db.Model):
@@ -181,7 +181,7 @@ def pub(pub_id):
     for message in chat_history_query:
         chat_display_data.append({
             'user_id': message.user_id,
-            'username': message.user.username if message.user else 'Guest',
+            'username': message.user.username if message.user_id != 0 else 'Guest',
             'timestamp': message.timestamp.strftime('%H:%M'),
             'content': message.content
         })
@@ -222,6 +222,18 @@ def delete_pub(pub_id):
     db.session.commit()
     flash("Pub and all its data have been permanently deleted.")
     return redirect("/dashboard")
+
+@app.route("/toggle_pub_privacy/<int:pub_id>", methods=["POST"])
+@login_required
+def toggle_pub_privacy(pub_id):
+    pub_info = Pub.query.get_or_404(pub_id)
+    if pub_info.owner_id != session["user_id"]:
+        return apology("You do not have permission to modify this pub.", 403)
+    
+    pub_info.is_private = not pub_info.is_private
+    db.session.commit()
+    flash(f"Pub is now {'Private' if pub_info.is_private else 'Public'}.")
+    return redirect(f"/pub/{pub_id}")
 
 @app.route("/canvas_preview/<int:canvas_id>.png")
 def canvas_preview(canvas_id):
@@ -343,6 +355,51 @@ def unfriend(friend_id):
         db.session.commit()
         flash("Friend removed.")
     return redirect("/friends")
+
+@app.route("/admin")
+@login_required
+@admin_required
+def admin_panel():
+    all_users = User.query.filter(User.id != 0).all()
+    all_pubs = Pub.query.options(joinedload(Pub.owner)).all()
+    return render_template("admin.html", users=all_users, pubs=all_pubs)
+
+@app.route("/admin/delete_user/<int:user_id>", methods=["POST"])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    if user_id == session["user_id"]: return apology("Cannot delete yourself", 400)
+    user = User.query.get(user_id)
+    if user:
+        # Cascade delete should handle pubs, members, etc.
+        db.session.delete(user)
+        db.session.commit()
+        flash("User and all their data have been deleted.")
+    return redirect("/admin")
+
+@app.route("/admin/delete_pub/<int:pub_id>", methods=["POST"])
+@login_required
+@admin_required
+def admin_delete_pub(pub_id):
+    pub = Pub.query.get(pub_id)
+    if pub:
+        ChatMessage.query.filter_by(pub_id=pub_id).delete()
+        db.session.delete(pub)
+        db.session.commit()
+        flash("Pub deleted by admin.")
+    return redirect("/admin")
+
+@app.route("/admin/toggle_admin/<int:user_id>", methods=["POST"])
+@login_required
+@admin_required
+def toggle_admin(user_id):
+    if user_id == session["user_id"]: return apology("You cannot change your own admin status.", 403)
+    user = User.query.get(user_id)
+    if not user: return apology("User not found.", 404)
+    user.role = "admin" if user.role == "user" else "user"
+    db.session.commit()
+    flash(f"User role updated to {user.role}.")
+    return redirect("/admin")
 
 # --- Authentication Routes ---
 @app.route("/login", methods=["GET", "POST"])
