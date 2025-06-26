@@ -1,4 +1,5 @@
 # PixelPub: A Real-Time Social Pixel Art Platform
+#### Video Demo:  <URL [Final CS50 Project](https://youtu.be/Lvjh4c7wtY0)>
 
 ---
 > **Author**: Hans Bregman  
