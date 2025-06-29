@@ -1,4 +1,6 @@
 # PixelPub: A Real-Time Social Pixel Art Platform
+--- 
+![PixelPub header](static/assets/HeroReadme.png)
 ---
 > **Author**: Hans Bregman  
 > **GitHub**: hns101 | **edX**: hns101  
