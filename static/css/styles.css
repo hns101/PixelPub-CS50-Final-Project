@@ -32,9 +32,9 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
 #canvas-wrapper {
     overflow: auto;
     background-color: #777; /* The grey area */
-    display: flex;
+    /* display: flex;
     justify-content: center; /* Horizontally center */
-    align-items: center;     /* Vertically center */
+    /* align-items: center;    */
 }
 #pixel-canvas { image-rendering: pixelated; background-color: white; border: 1px solid var(--border-color); cursor: crosshair; }
 #pixel-info-display {
