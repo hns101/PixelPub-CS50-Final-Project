@@ -36,7 +36,7 @@ body { background-color: var(--bg-dark); color: var(--text-light); font-family: 
     justify-content: center; /* Horizontally center */
     /* align-items: center;    */
 }
-#pixel-canvas { image-rendering: pixelated; background-color: white; border: 1px solid var(--border-color); cursor: crosshair; }
+#pixel-canvas { image-rendering: pixelated; background-color: white; border: 1px solid var(--border-color); cursor: crosshair; margin-top: 20px; }
 #pixel-info-display {
     position: absolute;
     bottom: 10px;
